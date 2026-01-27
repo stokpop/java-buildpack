@@ -162,9 +162,10 @@ function buildpack::package() {
   cached="${2}"
   stack="${3}"
 
-  local name cached_flag
+  local name cached_flag fast_zip_flag
   name="buildpack-${stack}-v${version}-uncached.zip"
   cached_flag=""
+  fast_zip_flag="--fast-zip"
   if [[ "${cached}" == "true" ]]; then
     cached_flag="--cached"
     name="buildpack-${stack}-v${version}-cached.zip"
@@ -177,7 +178,8 @@ function buildpack::package() {
     --version "${version}" \
     --output "${output}" \
     --stack "${stack}" \
-    ${cached_flag} > /dev/null
+    ${cached_flag} \
+    ${fast_zip_flag} > /dev/null
 
   printf "%s" "${output}"
 }

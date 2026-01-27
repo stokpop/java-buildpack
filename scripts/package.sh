@@ -14,10 +14,11 @@ source "${ROOTDIR}/scripts/.util/tools.sh"
 source "${ROOTDIR}/scripts/.util/print.sh"
 
 function main() {
-  local stack version cached output
+  local stack version cached output fast_zip
   stack="cflinuxfs4"
   cached="false"
   output="${ROOTDIR}/build/buildpack.zip"
+  fast_zip="false"
 
   while [[ "${#}" != 0 ]]; do
     case "${1}" in
@@ -41,6 +42,11 @@ function main() {
         shift 2
         ;;
 
+      --fast-zip)
+        fast_zip="true"
+        shift 1
+        ;;
+
       --help|-h)
         shift 1
         usage
@@ -62,7 +68,7 @@ function main() {
     echo "No version specified, using VERSION file: ${version}"
   fi
 
-  package::buildpack "${version}" "${cached}" "${stack}" "${output}"
+  package::buildpack "${version}" "${cached}" "${stack}" "${output}" "${fast_zip}"
 }
 
 
@@ -76,21 +82,23 @@ OPTIONS
   --cached                           cache the buildpack dependencies (default: false)
   --stack  <stack>                   specifies the stack (default: cflinuxfs4)
   --output <file>                    output file path (default: build/buildpack.zip)
+  --fast-zip                         recompress with store-only (no compression) to speed local tests
 USAGE
 }
 
 function package::buildpack() {
-  local version cached stack output
+  local version cached stack output fast_zip
   version="${1}"
   cached="${2}"
   stack="${3}"
   output="${4}"
+  fast_zip="${5}"
 
   mkdir -p "$(dirname "${output}")"
 
   util::tools::buildpack-packager::install --directory "${ROOTDIR}/.bin"
 
-  echo "Building buildpack (version: ${version}, stack: ${stack}, cached: ${cached}, output: ${output})"
+  echo "Building buildpack (version: ${version}, stack: ${stack}, cached: ${cached}, output: ${output}, fast_zip: ${fast_zip})"
 
   local stack_flag
   stack_flag="--any-stack"
@@ -108,6 +116,26 @@ function package::buildpack() {
   )"
 
   mv "${file}" "${output}"
+
+  if [[ "${fast_zip}" == "true" ]]; then
+    # Recompress to store-only to reduce CPU during test packaging usage
+    local tmpdir tmpzip
+    tmpdir="$(mktemp -d)"
+    tmpzip="$(mktemp -u).zip"
+
+    # Extract current zip
+    unzip -q "${output}" -d "${tmpdir}"
+
+    # Create a new zip with no compression
+    (
+      cd "${tmpdir}"
+      zip -q -r -0 "${tmpzip}" .
+    )
+
+    # Replace output with store-only zip
+    mv "${tmpzip}" "${output}"
+    rm -rf "${tmpdir}"
+  fi
 }
 
 main "${@:-}"
