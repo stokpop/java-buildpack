@@ -93,9 +93,10 @@ if [ -d "$DEPS_DIR/%s/java_opts" ]; then
             opts_content="${opts_content//\$HOME/$HOME}"
             opts_content="${opts_content//\$JAVA_OPTS/$USER_JAVA_OPTS}"
             
-            # Now expand all remaining environment variables using eval with proper escaping
-            # This mimics Ruby buildpack behavior where shell naturally expands variables
-            # Use eval in a subshell to safely expand variables without executing commands
+            # Expand any remaining environment variables in opts content via eval.
+            # Note: eval executes commands, but .opts files are written by the buildpack
+            # at staging time and run within the container context.
+            # This matches how the Ruby buildpack naturally expanded variables via shell.
             opts_content=$(eval "echo \"$opts_content\"")
             
             if [ -n "$opts_content" ]; then
