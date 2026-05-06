@@ -73,7 +73,9 @@ func CreateJavaOptsAssemblyScript(ctx *common.Context) error {
 # Expands runtime variables like $DEPS_DIR, $HOME, $JAVA_OPTS, and all other environment variables
 
 # Save original JAVA_OPTS from environment (user-provided)
-USER_JAVA_OPTS="$JAVA_OPTS"
+# Normalize to single line: YAML block scalars (>) may introduce newlines
+# xargs trims leading/trailing whitespace and collapses internal spaces
+USER_JAVA_OPTS=$(echo "$JAVA_OPTS" | tr '\n' ' ' | tr -s ' ' | xargs)
 
 # Start building new JAVA_OPTS
 JAVA_OPTS=""
@@ -84,19 +86,17 @@ if [ -d "$DEPS_DIR/%s/java_opts" ]; then
             # Read content and expand runtime variables
             opts_content=$(cat "$opts_file")
             
-            # First, expand special variables that need specific handling
-            # Expand $DEPS_DIR variable
-            opts_content=$(echo "$opts_content" | sed "s|\$DEPS_DIR|$DEPS_DIR|g")
+            # Expand $DEPS_DIR, $HOME, $JAVA_OPTS using bash parameter expansion.
+            # sed-based substitution breaks when these values contain the sed delimiter (|),
+            # backslashes, ampersands, or newlines — all valid in JAVA_OPTS and paths.
+            opts_content="${opts_content//\$DEPS_DIR/$DEPS_DIR}"
+            opts_content="${opts_content//\$HOME/$HOME}"
+            opts_content="${opts_content//\$JAVA_OPTS/$USER_JAVA_OPTS}"
             
-            # Expand $HOME variable (for app-provided JARs like AspectJ)
-            opts_content=$(echo "$opts_content" | sed "s|\$HOME|$HOME|g")
-            
-            # Expand $JAVA_OPTS to the saved USER_JAVA_OPTS value (not the loop's current JAVA_OPTS)
-            opts_content=$(echo "$opts_content" | sed "s|\$JAVA_OPTS|$USER_JAVA_OPTS|g")
-            
-            # Now expand all remaining environment variables using eval with proper escaping
-            # This mimics Ruby buildpack behavior where shell naturally expands variables
-            # Use eval in a subshell to safely expand variables without executing commands
+            # Expand any remaining environment variables in opts content via eval.
+            # Note: eval executes commands, but .opts files are written by the buildpack
+            # at staging time and run within the container context.
+            # This matches how the Ruby buildpack naturally expanded variables via shell.
             opts_content=$(eval "echo \"$opts_content\"")
             
             if [ -n "$opts_content" ]; then
