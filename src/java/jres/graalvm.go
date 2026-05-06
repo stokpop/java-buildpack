@@ -88,7 +88,7 @@ func (g *GraalVMJRE) Supply() error {
 	}
 
 	// Install Memory Calculator
-	g.memoryCalc = NewMemoryCalculator(g.ctx, g.jreDir, g.version, javaMajorVersion)
+	g.memoryCalc = NewMemoryCalculator(g.ctx, g.jreDir, g.version, javaMajorVersion, "graalvm")
 	if err := g.memoryCalc.Supply(); err != nil {
 		g.ctx.Log.Warning("Failed to install Memory Calculator: %s (continuing)", err.Error())
 		// Non-fatal - continue without memory calculator
@@ -143,7 +143,7 @@ func (g *GraalVMJRE) Finalize() error {
 
 	// Reconstruct Memory Calculator component if not already set
 	if g.memoryCalc == nil {
-		g.memoryCalc = NewMemoryCalculator(g.ctx, g.jreDir, g.version, javaMajorVersion)
+		g.memoryCalc = NewMemoryCalculator(g.ctx, g.jreDir, g.version, javaMajorVersion, "graalvm")
 	}
 
 	// Finalize Memory Calculator

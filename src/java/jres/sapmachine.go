@@ -88,7 +88,7 @@ func (s *SapMachineJRE) Supply() error {
 	}
 
 	// Install Memory Calculator
-	s.memoryCalc = NewMemoryCalculator(s.ctx, s.jreDir, s.version, javaMajorVersion)
+	s.memoryCalc = NewMemoryCalculator(s.ctx, s.jreDir, s.version, javaMajorVersion, "sapmachine")
 	if err := s.memoryCalc.Supply(); err != nil {
 		s.ctx.Log.Warning("Failed to install Memory Calculator: %s (continuing)", err.Error())
 		// Non-fatal - continue without memory calculator
@@ -143,7 +143,7 @@ func (s *SapMachineJRE) Finalize() error {
 
 	// Reconstruct Memory Calculator component if not already set
 	if s.memoryCalc == nil {
-		s.memoryCalc = NewMemoryCalculator(s.ctx, s.jreDir, s.version, javaMajorVersion)
+		s.memoryCalc = NewMemoryCalculator(s.ctx, s.jreDir, s.version, javaMajorVersion, "sapmachine")
 	}
 
 	// Finalize Memory Calculator

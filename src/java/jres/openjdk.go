@@ -113,7 +113,7 @@ func (o *OpenJDKJRE) Supply() error {
 	}
 
 	// Install Memory Calculator
-	o.memoryCalc = NewMemoryCalculator(o.ctx, o.jreDir, o.version, javaMajorVersion)
+	o.memoryCalc = NewMemoryCalculator(o.ctx, o.jreDir, o.version, javaMajorVersion, "openjdk")
 	if err := o.memoryCalc.Supply(); err != nil {
 		o.ctx.Log.Warning("Failed to install Memory Calculator: %s (continuing)", err.Error())
 		// Non-fatal - continue without memory calculator
@@ -184,7 +184,7 @@ func (o *OpenJDKJRE) Finalize() error {
 
 	// Reconstruct Memory Calculator component if not already set
 	if o.memoryCalc == nil {
-		o.memoryCalc = NewMemoryCalculator(o.ctx, o.jreDir, o.version, javaMajorVersion)
+		o.memoryCalc = NewMemoryCalculator(o.ctx, o.jreDir, o.version, javaMajorVersion, "openjdk")
 	}
 
 	// Finalize Memory Calculator
