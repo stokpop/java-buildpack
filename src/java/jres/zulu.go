@@ -88,7 +88,7 @@ func (z *ZuluJRE) Supply() error {
 	}
 
 	// Install Memory Calculator
-	z.memoryCalc = NewMemoryCalculator(z.ctx, z.jreDir, z.version, javaMajorVersion)
+	z.memoryCalc = NewMemoryCalculator(z.ctx, z.jreDir, z.version, javaMajorVersion, "zulu")
 	if err := z.memoryCalc.Supply(); err != nil {
 		z.ctx.Log.Warning("Failed to install Memory Calculator: %s (continuing)", err.Error())
 		// Non-fatal - continue without memory calculator
@@ -143,7 +143,7 @@ func (z *ZuluJRE) Finalize() error {
 
 	// Reconstruct Memory Calculator component if not already set
 	if z.memoryCalc == nil {
-		z.memoryCalc = NewMemoryCalculator(z.ctx, z.jreDir, z.version, javaMajorVersion)
+		z.memoryCalc = NewMemoryCalculator(z.ctx, z.jreDir, z.version, javaMajorVersion, "zulu")
 	}
 
 	// Finalize Memory Calculator

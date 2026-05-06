@@ -19,6 +19,7 @@ type MemoryCalculator struct {
 	jreDir           string
 	jreVersion       string
 	javaMajorVersion int
+	jreName          string
 	calculatorPath   string
 	version          string
 	classCount          int
@@ -31,12 +32,13 @@ type MemoryCalculator struct {
 }
 
 // NewMemoryCalculator creates a new memory calculator
-func NewMemoryCalculator(ctx *common.Context, jreDir, jreVersion string, javaMajorVersion int) *MemoryCalculator {
+func NewMemoryCalculator(ctx *common.Context, jreDir, jreVersion string, javaMajorVersion int, jreName string) *MemoryCalculator {
 	return &MemoryCalculator{
 		ctx:              ctx,
 		jreDir:           jreDir,
 		jreVersion:       jreVersion,
 		javaMajorVersion: javaMajorVersion,
+		jreName:          jreName,
 		stackThreads:     DefaultStackThreads,
 		headroom:         DefaultHeadroom,
 	}
@@ -384,15 +386,24 @@ type memoryCalculatorConfig struct {
 	Headroom     int `yaml:"headroom"`
 }
 
-// LoadConfig loads memory calculator configuration from JBP_CONFIG_OPEN_JDK_JRE
-// (standard CF format) and falls back to MEMORY_CALCULATOR_* env vars.
+// LoadConfig loads memory calculator configuration from the JRE-specific env var
+// (e.g. JBP_CONFIG_OPEN_JDK_JRE, JBP_CONFIG_SAP_MACHINE_JRE) and falls back
+// to MEMORY_CALCULATOR_* env vars.
 // Must be called at the start of Supply(), before countClasses().
 func (m *MemoryCalculator) LoadConfig() {
 	if m.configLoaded {
 		return
 	}
 	m.configLoaded = true
-	if config := os.Getenv("JBP_CONFIG_OPEN_JDK_JRE"); config != "" {
+
+	// Resolve the env var name for this JRE (e.g. "sapmachine" → "JBP_CONFIG_SAP_MACHINE_JRE")
+	envVarName := jreNameToDocumentedEnvVar[m.jreName]
+	if envVarName == "" {
+		// fallback: auto-generate from jreName
+		envVarName = fmt.Sprintf("JBP_CONFIG_%s", strings.ToUpper(strings.ReplaceAll(m.jreName, "-", "_")))
+	}
+
+	if config := os.Getenv(envVarName); config != "" {
 		yamlHandler := common.YamlHandler{}
 
 		// Extract raw memory_calculator sub-section to validate its fields separately,
@@ -404,14 +415,14 @@ func (m *MemoryCalculator) LoadConfig() {
 		if err := yamlHandler.Unmarshal([]byte(config), &rawCfg); err == nil && rawCfg.MC != nil {
 			if mcBytes, err := yamlHandler.Marshal(rawCfg.MC); err == nil {
 				if err := yamlHandler.ValidateFields(mcBytes, &memoryCalculatorConfig{}); err != nil {
-					m.ctx.Log.Warning("Unknown fields in JBP_CONFIG_OPEN_JDK_JRE memory_calculator: %s", err.Error())
+					m.ctx.Log.Warning("Unknown fields in %s memory_calculator: %s", envVarName, err.Error())
 				}
 			}
 		}
 
 		cfg := openJDKJREConfig{}
 		if err := yamlHandler.Unmarshal([]byte(config), &cfg); err != nil {
-			m.ctx.Log.Warning("Failed to parse JBP_CONFIG_OPEN_JDK_JRE: %s", err.Error())
+			m.ctx.Log.Warning("Failed to parse %s: %s", envVarName, err.Error())
 		} else {
 			mc := cfg.MemoryCalculator
 			if mc.StackThreads > 0 {

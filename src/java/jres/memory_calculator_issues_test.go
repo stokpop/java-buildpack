@@ -101,7 +101,7 @@ var _ = Describe("Memory Calculator Issues", func() {
 			Expect(os.Setenv("MEMORY_CALCULATOR_STACK_THREADS", "50")).To(Succeed())
 
 			fakeBinary("4.2.0")
-			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17)
+			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17, "openjdk")
 			Expect(mc.Finalize()).To(Succeed())
 
 			script := readGeneratedScript()
@@ -118,7 +118,7 @@ var _ = Describe("Memory Calculator Issues", func() {
 			Expect(os.Setenv("MEMORY_CALCULATOR_HEADROOM", "5")).To(Succeed())
 
 			fakeBinary("4.2.0")
-			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17)
+			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17, "openjdk")
 			Expect(mc.Finalize()).To(Succeed())
 
 			script := readGeneratedScript()
@@ -157,7 +157,7 @@ var _ = Describe("Memory Calculator Issues", func() {
 				"{ memory_calculator: { stack_threads: 50 } }")).To(Succeed())
 
 			fakeBinary("4.2.0")
-			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17)
+			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17, "openjdk")
 			Expect(mc.Finalize()).To(Succeed())
 
 			script := readGeneratedScript()
@@ -179,7 +179,7 @@ var _ = Describe("Memory Calculator Issues", func() {
 				"{ memory_calculator: { class_count: 3500 } }")).To(Succeed())
 
 			fakeBinary("4.2.0")
-			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17)
+			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17, "openjdk")
 			Expect(mc.Finalize()).To(Succeed())
 
 			script := readGeneratedScript()
@@ -190,6 +190,46 @@ var _ = Describe("Memory Calculator Issues", func() {
 			Expect(script).To(ContainSubstring("--loaded-class-count=3500"),
 				"expected --loaded-class-count=3500 from JBP_CONFIG_OPEN_JDK_JRE.\nScript:\n%s",
 				script)
+		})
+	})
+
+	// -------------------------------------------------------------------------
+	// JBP_CONFIG_<VENDOR>_JRE config is ignored for non-OpenJDK JREs
+	//
+	// LoadConfig() hardcodes JBP_CONFIG_OPEN_JDK_JRE, so memory calculator
+	// tuning via JBP_CONFIG_SAP_MACHINE_JRE, JBP_CONFIG_ZULU_JRE, etc. is
+	// silently ignored.
+	//
+	// Fix: pass jreName to NewMemoryCalculator and use jreNameToDocumentedEnvVar
+	// to read the correct env var in LoadConfig().
+	// -------------------------------------------------------------------------
+	Describe("Non-OpenJDK JRE config is silently ignored", func() {
+		It("JBP_CONFIG_SAP_MACHINE_JRE stack_threads is reflected in generated script", func() {
+			DeferCleanup(os.Unsetenv, "JBP_CONFIG_SAP_MACHINE_JRE")
+			Expect(os.Setenv("JBP_CONFIG_SAP_MACHINE_JRE",
+				"{ memory_calculator: { stack_threads: 50 } }")).To(Succeed())
+
+			fakeBinary("4.2.0")
+			mc := jres.NewMemoryCalculator(ctx, jreDir, "21.0.1", 21, "sapmachine")
+			Expect(mc.Finalize()).To(Succeed())
+
+			script := readGeneratedScript()
+			Expect(script).To(ContainSubstring("--thread-count=50"),
+				"expected --thread-count=50 from JBP_CONFIG_SAP_MACHINE_JRE but got default.\nScript:\n%s", script)
+		})
+
+		It("JBP_CONFIG_ZULU_JRE headroom is reflected in generated script", func() {
+			DeferCleanup(os.Unsetenv, "JBP_CONFIG_ZULU_JRE")
+			Expect(os.Setenv("JBP_CONFIG_ZULU_JRE",
+				"{ memory_calculator: { headroom: 10 } }")).To(Succeed())
+
+			fakeBinary("4.2.0")
+			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17, "zulu")
+			Expect(mc.Finalize()).To(Succeed())
+
+			script := readGeneratedScript()
+			Expect(script).To(ContainSubstring("--head-room=10"),
+				"expected --head-room=10 from JBP_CONFIG_ZULU_JRE but got default.\nScript:\n%s", script)
 		})
 	})
 
@@ -205,7 +245,7 @@ var _ = Describe("Memory Calculator Issues", func() {
 				`{ jre: { version: "25.+" }, memory_calculator: { headroom: 5, stack_threads: 50 } }`)).To(Succeed())
 
 			fakeBinary("4.2.0")
-			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17)
+			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17, "openjdk")
 			Expect(mc.Finalize()).To(Succeed())
 
 			script := readGeneratedScript()
@@ -221,7 +261,7 @@ var _ = Describe("Memory Calculator Issues", func() {
 				`{ memory_calculator: { stack_thread: 50 } }`)).To(Succeed()) // typo: missing 's'
 
 			fakeBinary("4.2.0")
-			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17)
+			mc := jres.NewMemoryCalculator(ctx, jreDir, "17.0.9", 17, "openjdk")
 			Expect(mc.Finalize()).To(Succeed())
 
 			Expect(logBuffer.String()).To(ContainSubstring("WARNING"),

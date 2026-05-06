@@ -90,7 +90,7 @@ func (i *IBMJRE) Supply() error {
 	}
 
 	// Install Memory Calculator
-	i.memoryCalc = NewMemoryCalculator(i.ctx, i.jreDir, i.version, javaMajorVersion)
+	i.memoryCalc = NewMemoryCalculator(i.ctx, i.jreDir, i.version, javaMajorVersion, "ibm")
 	if err := i.memoryCalc.Supply(); err != nil {
 		i.ctx.Log.Warning("Failed to install Memory Calculator: %s (continuing)", err.Error())
 		// Non-fatal - continue without memory calculator
@@ -146,7 +146,7 @@ func (i *IBMJRE) Finalize() error {
 
 	// Reconstruct Memory Calculator component if not already set
 	if i.memoryCalc == nil {
-		i.memoryCalc = NewMemoryCalculator(i.ctx, i.jreDir, i.version, javaMajorVersion)
+		i.memoryCalc = NewMemoryCalculator(i.ctx, i.jreDir, i.version, javaMajorVersion, "ibm")
 	}
 
 	// Finalize Memory Calculator
