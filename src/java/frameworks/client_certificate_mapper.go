@@ -33,8 +33,34 @@ func (c *ClientCertificateMapperFramework) Detect() (string, error) {
 		return "", nil
 	}
 
+	// Don't install if the app already bundles its own client-certificate-mapper JAR
+	if c.hasClientCertificateMapper() {
+		c.context.Log.Info("client-certificate-mapper already present in application, skipping buildpack version")
+		return "", nil
+	}
+
 	// Enabled by default to support mTLS client certificate authentication
 	return "Client Certificate Mapper", nil
+}
+
+// hasClientCertificateMapper checks if a client-certificate-mapper JAR is already bundled in the app
+func (c *ClientCertificateMapperFramework) hasClientCertificateMapper() bool {
+	jarGlob := "client-certificate-mapper*.jar"
+	buildDir := c.context.Stager.BuildDir()
+	patterns := []string{
+		filepath.Join(buildDir, "WEB-INF", "lib", jarGlob),
+		filepath.Join(buildDir, "BOOT-INF", "lib", jarGlob),
+		filepath.Join(buildDir, "lib", jarGlob),
+	}
+
+	for _, pattern := range patterns {
+		matches, err := filepath.Glob(pattern)
+		if err == nil && len(matches) > 0 {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Supply installs the client certificate mapper JAR

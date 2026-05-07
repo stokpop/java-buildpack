@@ -67,6 +67,45 @@ var _ = Describe("Client Certificate Mapper", func() {
 				})
 			})
 
+			Context("when client-certificate-mapper JAR is already in WEB-INF/lib", func() {
+				BeforeEach(func() {
+					Expect(os.MkdirAll(filepath.Join(buildDir, "WEB-INF", "lib"), 0755)).To(Succeed())
+					Expect(os.WriteFile(filepath.Join(buildDir, "WEB-INF", "lib", "client-certificate-mapper-2.0.1.jar"), []byte("fake"), 0644)).To(Succeed())
+				})
+
+				It("returns empty string (skips buildpack version)", func() {
+					name, err := fw.Detect()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(name).To(BeEmpty())
+				})
+			})
+
+			Context("when client-certificate-mapper JAR is already in BOOT-INF/lib", func() {
+				BeforeEach(func() {
+					Expect(os.MkdirAll(filepath.Join(buildDir, "BOOT-INF", "lib"), 0755)).To(Succeed())
+					Expect(os.WriteFile(filepath.Join(buildDir, "BOOT-INF", "lib", "client-certificate-mapper-3.0.0.jar"), []byte("fake"), 0644)).To(Succeed())
+				})
+
+				It("returns empty string (skips buildpack version)", func() {
+					name, err := fw.Detect()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(name).To(BeEmpty())
+				})
+			})
+
+			Context("when client-certificate-mapper JAR is already in lib", func() {
+				BeforeEach(func() {
+					Expect(os.MkdirAll(filepath.Join(buildDir, "lib"), 0755)).To(Succeed())
+					Expect(os.WriteFile(filepath.Join(buildDir, "lib", "client-certificate-mapper-2.0.1.jar"), []byte("fake"), 0644)).To(Succeed())
+				})
+
+				It("returns empty string (skips buildpack version)", func() {
+					name, err := fw.Detect()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(name).To(BeEmpty())
+				})
+			})
+
 			Context("with enabled: true in JBP_CONFIG_CLIENT_CERTIFICATE_MAPPER", func() {
 				BeforeEach(func() {
 					os.Setenv("JBP_CONFIG_CLIENT_CERTIFICATE_MAPPER", "enabled: true")
