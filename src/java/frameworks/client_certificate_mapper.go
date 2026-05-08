@@ -43,20 +43,26 @@ func (c *ClientCertificateMapperFramework) Detect() (string, error) {
 	return "Client Certificate Mapper", nil
 }
 
-// hasClientCertificateMapper checks if a client-certificate-mapper JAR is already bundled in the app
+// hasClientCertificateMapper checks if a client-certificate-mapper JAR is already bundled in the app.
+// Matches both "client-certificate-mapper-*.jar" and "java-buildpack-client-certificate-mapper-*.jar".
 func (c *ClientCertificateMapperFramework) hasClientCertificateMapper() bool {
-	jarGlob := "client-certificate-mapper*.jar"
 	buildDir := c.context.Stager.BuildDir()
-	patterns := []string{
-		filepath.Join(buildDir, "WEB-INF", "lib", jarGlob),
-		filepath.Join(buildDir, "BOOT-INF", "lib", jarGlob),
-		filepath.Join(buildDir, "lib", jarGlob),
+	libDirs := []string{
+		filepath.Join(buildDir, "WEB-INF", "lib"),
+		filepath.Join(buildDir, "BOOT-INF", "lib"),
+		filepath.Join(buildDir, "lib"),
+	}
+	jarGlobs := []string{
+		"client-certificate-mapper*.jar",
+		"java-buildpack-client-certificate-mapper*.jar",
 	}
 
-	for _, pattern := range patterns {
-		matches, err := filepath.Glob(pattern)
-		if err == nil && len(matches) > 0 {
-			return true
+	for _, dir := range libDirs {
+		for _, glob := range jarGlobs {
+			matches, err := filepath.Glob(filepath.Join(dir, glob))
+			if err == nil && len(matches) > 0 {
+				return true
+			}
 		}
 	}
 

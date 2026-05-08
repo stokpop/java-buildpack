@@ -93,6 +93,19 @@ var _ = Describe("Client Certificate Mapper", func() {
 				})
 			})
 
+			Context("when java-buildpack-client-certificate-mapper JAR is already in BOOT-INF/lib", func() {
+				BeforeEach(func() {
+					Expect(os.MkdirAll(filepath.Join(buildDir, "BOOT-INF", "lib"), 0755)).To(Succeed())
+					Expect(os.WriteFile(filepath.Join(buildDir, "BOOT-INF", "lib", "java-buildpack-client-certificate-mapper-2.0.2-SNAPSHOT.jar"), []byte("fake"), 0644)).To(Succeed())
+				})
+
+				It("returns empty string (skips buildpack version)", func() {
+					name, err := fw.Detect()
+					Expect(err).NotTo(HaveOccurred())
+					Expect(name).To(BeEmpty())
+				})
+			})
+
 			Context("when client-certificate-mapper JAR is already in lib", func() {
 				BeforeEach(func() {
 					Expect(os.MkdirAll(filepath.Join(buildDir, "lib"), 0755)).To(Succeed())
