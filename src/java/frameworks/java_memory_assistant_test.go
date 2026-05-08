@@ -294,6 +294,35 @@ var _ = Describe("Java Memory Assistant", func() {
 			})
 		})
 
+		Context("with the exact config from user: enabled, heap threshold 80%, heap_dump_folder /home/vcap/, check_interval 5m", func() {
+			BeforeEach(func() {
+				installJMAAgent(depsDir, "1.2.3")
+				os.Setenv("JBP_CONFIG_JAVA_MEMORY_ASSISTANT",
+					`{enabled : true, agent: { thresholds : { heap: "80%" }, heap_dump_folder: /home/vcap/, check_interval: 5m } }`)
+			})
+
+			It("opts file contains -Djma.threshold.heap=80%", func() {
+				Expect(fw.Finalize()).To(Succeed())
+				content, err := os.ReadFile(filepath.Join(depsDir, "0", "java_opts", "28_java_memory_assistant.opts"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).To(ContainSubstring("-Djma.threshold.heap=80%"))
+			})
+
+			It("opts file contains -Djma.heap-dump-folder=/home/vcap/", func() {
+				Expect(fw.Finalize()).To(Succeed())
+				content, err := os.ReadFile(filepath.Join(depsDir, "0", "java_opts", "28_java_memory_assistant.opts"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).To(ContainSubstring("-Djma.heap-dump-folder=/home/vcap/"))
+			})
+
+			It("opts file contains -Djma.check-interval=5m", func() {
+				Expect(fw.Finalize()).To(Succeed())
+				content, err := os.ReadFile(filepath.Join(depsDir, "0", "java_opts", "28_java_memory_assistant.opts"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).To(ContainSubstring("-Djma.check-interval=5m"))
+			})
+		})
+
 		Context("when the agent JAR is not present", func() {
 			It("returns an error", func() {
 				err := fw.Finalize()
