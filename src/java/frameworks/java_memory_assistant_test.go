@@ -329,6 +329,20 @@ var _ = Describe("Java Memory Assistant", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(content)).To(ContainSubstring("-Djma.check_interval=5m"))
 			})
+
+			It("opts file still contains the default old_gen threshold (not explicitly set)", func() {
+				Expect(fw.Finalize()).To(Succeed())
+				content, err := os.ReadFile(filepath.Join(depsDir, "0", "java_opts", "28_java_memory_assistant.opts"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).To(ContainSubstring("-Djma.thresholds.old_gen=>600MB"))
+			})
+
+			It("opts file does not contain an empty log_level", func() {
+				Expect(fw.Finalize()).To(Succeed())
+				content, err := os.ReadFile(filepath.Join(depsDir, "0", "java_opts", "28_java_memory_assistant.opts"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(content)).NotTo(ContainSubstring("-Djma.log_level="))
+			})
 		})
 	})
 })

@@ -117,5 +117,41 @@ var _ = Describe("Java Opts Writer", func() {
 			Expect(err).NotTo(HaveOccurred(), "script failed with output: %s", output)
 			Expect(output).To(ContainSubstring("-Djava.security.properties=" + depsDir + "/0/security.properties"))
 		})
+
+		It("preserves > in opts file content (e.g. JMA threshold >600MB)", func() {
+			// -Djma.thresholds.old_gen=>600MB contains '>' which must not be treated
+			// as a shell redirect operator — the JVM must receive the full value.
+			output, err := runScript("", "-Djma.thresholds.old_gen=>600MB")
+			Expect(err).NotTo(HaveOccurred(), "script failed with output: %s", output)
+			Expect(output).To(ContainSubstring("-Djma.thresholds.old_gen=>600MB"))
+		})
+
+		It("expands $JAVA_HOME in opts file content", func() {
+			output, err := runScript("", "-Djava.ext.dirs=$JAVA_HOME/jre/lib/ext")
+			Expect(err).NotTo(HaveOccurred(), "script failed with output: %s", output)
+			// $JAVA_HOME resolves to something (may be empty in test env, but must not error)
+			Expect(output).NotTo(ContainSubstring("$JAVA_HOME"))
+		})
+
+		It("expands $TMPDIR in opts file content (e.g. Contrast Security Agent)", func() {
+			cmd := exec.Command("bash", "-c",
+				"source "+filepath.Join(depsDir, "0", "profile.d", "00_java_opts.sh")+" && echo \"$JAVA_OPTS\"")
+
+			err := frameworks.CreateJavaOptsAssemblyScript(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			optsDir := filepath.Join(depsDir, "0", "java_opts")
+			Expect(os.MkdirAll(optsDir, 0755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(optsDir, "18_contrast.opts"), []byte("-Dcontrast.dir=$TMPDIR"), 0644)).To(Succeed())
+
+			cmd.Env = append(os.Environ(),
+				"JAVA_OPTS=",
+				"DEPS_DIR="+depsDir,
+				"HOME=/home/vcap/app",
+				"TMPDIR=/tmp/myapp",
+			)
+			output, cmdErr := cmd.CombinedOutput()
+			Expect(cmdErr).NotTo(HaveOccurred(), "script failed with output: %s", output)
+			Expect(string(output)).To(ContainSubstring("-Dcontrast.dir=/tmp/myapp"))
+		})
 	})
 })
