@@ -197,6 +197,63 @@ var _ = Describe("Java Main Container", func() {
 			})
 		})
 
+		Context("with JBP_CONFIG_JAVA_MAIN java_main_class overriding manifest Main-Class", func() {
+			// Ruby parity: config[MAIN_CLASS_PROPERTY] takes precedence over manifest Main-Class
+			// This is how PropertiesLauncher is used with Spring Boot exploded JARs
+			BeforeEach(func() {
+				os.Setenv("JBP_CONFIG_JAVA_MAIN", "{java_main_class: org.springframework.boot.loader.launch.PropertiesLauncher}")
+				Expect(createJar(
+					filepath.Join(buildDir, "app.jar"),
+					"Manifest-Version: 1.0\nMain-Class: org.springframework.boot.loader.JarLauncher\n",
+				)).To(Succeed())
+			})
+
+			AfterEach(func() {
+				os.Unsetenv("JBP_CONFIG_JAVA_MAIN")
+			})
+
+			It("uses the configured java_main_class instead of the manifest Main-Class", func() {
+				container.Detect()
+				cmd, err := container.Release()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmd).To(ContainSubstring("org.springframework.boot.loader.launch.PropertiesLauncher"))
+				Expect(cmd).NotTo(ContainSubstring("JarLauncher"))
+			})
+
+			It("uses classpath mode (not java -jar) so the overridden main class is actually invoked", func() {
+				container.Detect()
+				cmd, err := container.Release()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmd).NotTo(ContainSubstring("-jar"))
+				Expect(cmd).To(ContainSubstring("-cp"))
+			})
+		})
+
+		Context("with JBP_CONFIG_JAVA_MAIN java_main_class on app with no manifest Main-Class", func() {
+			BeforeEach(func() {
+				os.Setenv("JBP_CONFIG_JAVA_MAIN", "{java_main_class: com.example.CustomMain}")
+				// App has no Main-Class in manifest — detection still works via JBP_CONFIG_JAVA_MAIN
+				os.WriteFile(filepath.Join(buildDir, "app.jar"), []byte("fake"), 0644)
+			})
+
+			AfterEach(func() {
+				os.Unsetenv("JBP_CONFIG_JAVA_MAIN")
+			})
+
+			It("detects as Java Main application", func() {
+				name, err := container.Detect()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(name).To(Equal("Java Main"))
+			})
+
+			It("uses the configured main class", func() {
+				container.Detect()
+				cmd, err := container.Release()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmd).To(ContainSubstring("com.example.CustomMain"))
+			})
+		})
+
 		Context("without main class or JAR", func() {
 			It("returns error", func() {
 				_, err := container.Release()

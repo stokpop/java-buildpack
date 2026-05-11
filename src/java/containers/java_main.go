@@ -11,6 +11,25 @@ import (
 	"github.com/cloudfoundry/java-buildpack/src/java/common"
 )
 
+type javaMainConfig struct {
+	JavaMainClass string `yaml:"java_main_class"`
+	Arguments     string `yaml:"arguments"`
+}
+
+func loadJavaMainConfig(log interface{ Warning(string, ...interface{}) }) javaMainConfig {
+	cfg := javaMainConfig{}
+	raw := os.Getenv("JBP_CONFIG_JAVA_MAIN")
+	if raw == "" {
+		return cfg
+	}
+	yamlHandler := common.YamlHandler{}
+	if err := yamlHandler.ValidateFields([]byte(raw), &cfg); err != nil {
+		log.Warning("Unknown JBP_CONFIG_JAVA_MAIN values: %s", err.Error())
+	}
+	_ = yamlHandler.Unmarshal([]byte(raw), &cfg)
+	return cfg
+}
+
 // JavaMainContainer handles standalone JAR applications with a main class
 type JavaMainContainer struct {
 	context   *common.Context
@@ -28,6 +47,14 @@ func NewJavaMainContainer(ctx *common.Context) *JavaMainContainer {
 // Detect checks if this is a Java Main application
 func (j *JavaMainContainer) Detect() (string, error) {
 	buildDir := j.context.Stager.BuildDir()
+
+	// JBP_CONFIG_JAVA_MAIN with java_main_class always wins (Ruby parity)
+	cfg := loadJavaMainConfig(j.context.Log)
+	if cfg.JavaMainClass != "" {
+		j.mainClass = cfg.JavaMainClass
+		j.context.Log.Debug("Detected Java Main application via JBP_CONFIG_JAVA_MAIN: %s", j.mainClass)
+		return "Java Main", nil
+	}
 
 	// Look for JAR files with Main-Class manifest
 	mainClass, jarFile := j.findMainClass(buildDir)
@@ -230,6 +257,13 @@ func (j *JavaMainContainer) buildClasspath() (string, error) {
 
 // Release returns the Java Main startup command
 func (j *JavaMainContainer) Release() (string, error) {
+	// JBP_CONFIG_JAVA_MAIN java_main_class takes precedence over manifest Main-Class.
+	// Use classpath mode so the configured class is actually invoked (not the manifest's).
+	cfg := loadJavaMainConfig(j.context.Log)
+	if cfg.JavaMainClass != "" {
+		return fmt.Sprintf("eval exec $JAVA_HOME/bin/java $JAVA_OPTS -cp ${CLASSPATH}${CONTAINER_SECURITY_PROVIDER:+:$CONTAINER_SECURITY_PROVIDER} %s", cfg.JavaMainClass), nil
+	}
+
 	if j.jarFile != "" {
 		// JAR has its own Main-Class in the manifest — java -jar handles it
 		// Use eval to properly handle backslash-escaped values in $JAVA_OPTS (Ruby buildpack parity)
