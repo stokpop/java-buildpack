@@ -91,6 +91,8 @@ func testJavaMain(platform switchblade.Platform, fixtures string) func(*testing.
 
 				// Verify app can start (validates command with arguments is valid)
 				Eventually(deployment.ExternalURL).ShouldNot(BeEmpty())
+				// NOTE: does not verify arguments are actually appended to the command line;
+				// that is covered by unit tests in src/java/containers/java_main_test.go.
 			})
 		})
 
@@ -108,6 +110,8 @@ func testJavaMain(platform switchblade.Platform, fixtures string) func(*testing.
 				// Verify buildpack stages successfully with JAVA_OPTS
 				Expect(logs.String()).To(ContainSubstring("Java Buildpack"))
 				Expect(logs.String()).To(ContainSubstring("Java Main"))
+				// NOTE: does not verify JAVA_OPTS are applied to the JVM command line;
+				// staging success only confirms the options did not break the build.
 			})
 		})
 
