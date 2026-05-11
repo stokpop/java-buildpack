@@ -62,6 +62,16 @@ func testJavaMain(platform switchblade.Platform, fixtures string) func(*testing.
 				// Verify buildpack detects and applies explicit main class configuration
 				Expect(logs.String()).To(ContainSubstring("Java Buildpack"))
 				Expect(logs.String()).To(ContainSubstring("Java Main"))
+
+				// NOTE: this test does NOT verify that java_main_class actually overrides the
+				// manifest Main-Class, because:
+				//   1. The fixture's MANIFEST.MF already has Main-Class: io.pivotal.SimpleJava
+				//      (same value as JBP_CONFIG_JAVA_MAIN), so the test passes even if the
+				//      config is ignored.
+				//   2. switchblade's Deployment struct does not expose the release command,
+				//      so we cannot assert -cp vs -jar or which class was used.
+				// The override behaviour and -cp mode are covered by unit tests in
+				// src/java/containers/java_main_test.go.
 			})
 		})
 
