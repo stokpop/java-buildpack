@@ -195,6 +195,20 @@ func (j *JavaMainContainer) Supply() error {
 	return nil
 }
 
+// isSpringBootLauncher returns true if the given class is one of the Spring Boot launchers.
+func isSpringBootLauncher(mainClass string) bool {
+	switch mainClass {
+	case "org.springframework.boot.loader.JarLauncher",
+		"org.springframework.boot.loader.WarLauncher",
+		"org.springframework.boot.loader.PropertiesLauncher",
+		"org.springframework.boot.loader.launch.JarLauncher",
+		"org.springframework.boot.loader.launch.WarLauncher",
+		"org.springframework.boot.loader.launch.PropertiesLauncher":
+		return true
+	}
+	return false
+}
+
 // Finalize performs final Java Main configuration
 func (j *JavaMainContainer) Finalize() error {
 	j.context.Log.BeginStep("Finalizing Java Main")
@@ -206,6 +220,17 @@ func (j *JavaMainContainer) Finalize() error {
 	}
 
 	profileScript := fmt.Sprintf("export CLASSPATH=\"%s${CLASSPATH:+:$CLASSPATH}\"\n", classpath)
+
+	// Ruby parity: set SERVER_PORT=$PORT when the main class is a Spring Boot launcher
+	// so the app binds to the CF-assigned port.
+	cfg := loadJavaMainConfig(j.context.Log)
+	mainClass := cfg.JavaMainClass
+	if mainClass == "" {
+		mainClass = j.mainClass
+	}
+	if isSpringBootLauncher(mainClass) {
+		profileScript += "export SERVER_PORT=$PORT\n"
+	}
 
 	if err := j.context.Stager.WriteProfileD("java_main.sh", profileScript); err != nil {
 		return fmt.Errorf("failed to write java_main.sh profile.d script: %w", err)

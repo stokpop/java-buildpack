@@ -386,16 +386,44 @@ var _ = Describe("Java Main Container", func() {
 			})
 		})
 
-		Context("with empty build directory", func() {
+		Context("with Spring Boot launcher in JBP_CONFIG_JAVA_MAIN", func() {
+			BeforeEach(func() {
+				os.Setenv("JBP_CONFIG_JAVA_MAIN", `{java_main_class: "org.springframework.boot.loader.launch.PropertiesLauncher"}`)
+				os.WriteFile(filepath.Join(buildDir, "app.jar"), []byte("fake"), 0644)
+			})
+
+			AfterEach(func() {
+				os.Unsetenv("JBP_CONFIG_JAVA_MAIN")
+			})
+
+			It("writes SERVER_PORT=$PORT to profile.d for Ruby parity", func() {
+				container.Detect()
+				err := container.Finalize()
+				Expect(err).NotTo(HaveOccurred())
+
+				profileScript := filepath.Join(depsDir, "0", "profile.d", "java_main.sh")
+				data, err := os.ReadFile(profileScript)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(data)).To(ContainSubstring("export SERVER_PORT=$PORT\n"))
+			})
+		})
+
+		Context("with non-Spring-Boot main class", func() {
 			BeforeEach(func() {
 				os.WriteFile(filepath.Join(buildDir, "Main.class"), []byte("fake"), 0644)
 			})
 
-			It("creates minimal classpath", func() {
+			It("does not write SERVER_PORT to profile.d", func() {
 				container.Detect()
 				err := container.Finalize()
 				Expect(err).NotTo(HaveOccurred())
+
+				profileScript := filepath.Join(depsDir, "0", "profile.d", "java_main.sh")
+				data, err := os.ReadFile(profileScript)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(data)).NotTo(ContainSubstring("SERVER_PORT"))
 			})
 		})
+
 	})
 })
