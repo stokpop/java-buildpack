@@ -254,6 +254,32 @@ var _ = Describe("Java Main Container", func() {
 			})
 		})
 
+		Context("with JBP_CONFIG_JAVA_MAIN arguments", func() {
+			AfterEach(func() {
+				os.Unsetenv("JBP_CONFIG_JAVA_MAIN")
+			})
+
+			It("appends arguments after main class when using java_main_class", func() {
+				os.Setenv("JBP_CONFIG_JAVA_MAIN", `{java_main_class: com.example.Main, arguments: "--server.port=$PORT"}`)
+				container.Detect()
+				cmd, err := container.Release()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmd).To(ContainSubstring("com.example.Main --server.port=$PORT"))
+			})
+
+			It("appends arguments after main class when using manifest Main-Class", func() {
+				os.Setenv("JBP_CONFIG_JAVA_MAIN", `{arguments: "--foo=bar"}`)
+				Expect(createJar(
+					filepath.Join(buildDir, "app.jar"),
+					"Manifest-Version: 1.0\nMain-Class: com.example.Main\n",
+				)).To(Succeed())
+				container.Detect()
+				cmd, err := container.Release()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmd).To(ContainSubstring("--foo=bar"))
+			})
+		})
+
 		Context("without main class or JAR", func() {
 			It("returns error", func() {
 				_, err := container.Release()
