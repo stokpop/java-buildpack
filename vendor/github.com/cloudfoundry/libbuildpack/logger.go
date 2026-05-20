@@ -12,18 +12,25 @@ type Logger struct {
 }
 
 const (
-	msgPrefix   = "       "
-	redPrefix   = "\033[31;1m"
-	bluePrefix  = "\033[34;1m"
-	colorSuffix = "\033[0m"
-	msgError    = msgPrefix + redPrefix + "**ERROR**" + colorSuffix
-	msgWarning  = msgPrefix + redPrefix + "**WARNING**" + colorSuffix
-	msgProtip   = msgPrefix + bluePrefix + "PRO TIP:" + colorSuffix
-	msgDebug    = msgPrefix + bluePrefix + "DEBUG:" + colorSuffix
+	msgPrefix      = "       "
+	redPrefix      = "\033[31;1m"
+	bluePrefix     = "\033[34;1m"
+	purplePrefix   = "\033[35;1m"
+	darkBluePrefix = "\033[34m"
+	greenItalic    = "\033[32;3m"
+	colorSuffix    = "\033[0m"
+	msgError       = msgPrefix + redPrefix + "**ERROR**" + colorSuffix
+	msgWarning     = msgPrefix + redPrefix + "**WARNING**" + colorSuffix
+	msgProtip      = msgPrefix + bluePrefix + "PRO TIP:" + colorSuffix
+	msgDebug       = msgPrefix + bluePrefix + "DEBUG:" + colorSuffix
 )
 
 func NewLogger(w io.Writer) *Logger {
 	return &Logger{w: w}
+}
+
+func colorEnabled() bool {
+	return os.Getenv("BP_NO_COLOR") == "" && os.Getenv("NO_COLOR") == ""
 }
 
 func (l *Logger) Info(format string, args ...interface{}) {
@@ -46,6 +53,26 @@ func (l *Logger) Debug(format string, args ...interface{}) {
 
 func (l *Logger) BeginStep(format string, args ...interface{}) {
 	l.printWithHeader("----->", format, args...)
+}
+
+func (l *Logger) Downloading(name, version, uri string, cached bool) {
+	if !colorEnabled() {
+		cacheTag := ""
+		if cached {
+			cacheTag = " (found in cache)"
+		}
+		fmt.Fprintf(l.w, "-----> Downloading %s %s from %s%s\n", name, version, uri, cacheTag)
+		return
+	}
+	cacheTag := ""
+	if cached {
+		cacheTag = " " + greenItalic + "(found in cache)" + colorSuffix
+	}
+	msg := fmt.Sprintf("Downloading %s%s%s %s%s%s from %s%s",
+		purplePrefix, name, colorSuffix,
+		darkBluePrefix, version, colorSuffix,
+		uri, cacheTag)
+	fmt.Fprintf(l.w, "-----> %s\n", msg)
 }
 
 func (l *Logger) Protip(tip string, helpURL string) {

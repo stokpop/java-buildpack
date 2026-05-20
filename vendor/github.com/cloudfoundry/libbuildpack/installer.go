@@ -44,7 +44,28 @@ func (i *Installer) InstallDependency(dep Dependency, outputDir string) error {
 // This is useful for archives that extract to a top-level directory
 // (e.g., apache-tomcat-9.0.98.tar.gz extracts to apache-tomcat-9.0.98/)
 func (i *Installer) InstallDependencyWithStrip(dep Dependency, outputDir string, stripComponents int) error {
-	i.manifest.log.BeginStep("Installing %s %s", dep.Name, dep.Version)
+	entry, err := i.manifest.GetEntry(dep)
+	if err != nil {
+		return err
+	}
+
+	// Determine cache status before fetching
+	cached := false
+	if entry.File != "" {
+		cached = true
+	} else if i.appCacheDir != "" {
+		shaURI := sha256.Sum256([]byte(entry.URI))
+		cacheFile := filepath.Join(i.appCacheDir, hex.EncodeToString(shaURI[:]), filepath.Base(entry.URI))
+		if found, ferr := FileExists(cacheFile); ferr == nil {
+			cached = found
+		}
+	}
+
+	filteredURI, err := filterURI(entry.URI)
+	if err != nil {
+		filteredURI = entry.URI
+	}
+	i.manifest.log.Downloading(dep.Name, dep.Version, filteredURI, cached)
 
 	tmpDir, err := os.MkdirTemp("", "downloads")
 	if err != nil {
@@ -53,11 +74,6 @@ func (i *Installer) InstallDependencyWithStrip(dep Dependency, outputDir string,
 	defer os.RemoveAll(tmpDir)
 
 	tmpFile := filepath.Join(tmpDir, "archive")
-
-	entry, err := i.manifest.GetEntry(dep)
-	if err != nil {
-		return err
-	}
 
 	err = i.FetchDependency(dep, tmpFile)
 	if err != nil {
@@ -257,7 +273,6 @@ func (i *Installer) fetchAppCachedBuildpackDependency(entry *ManifestEntry, outp
 	}
 
 	if foundCacheFile {
-		i.manifest.log.Info("Copy [%s]", cacheFile)
 		if err := CopyFile(cacheFile, outputFile); err != nil {
 			return err
 		}
