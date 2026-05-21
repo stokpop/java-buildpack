@@ -1,6 +1,24 @@
 # Debugging the Buildpack
 The buildpack is designed to be easy to configure and extend, but it is still possible that something will go wrong.  A configuration property might have an invalid value, or a new component may conflict with an existing one.  When these problems happen, the buildpack can tell you quite a bit about what went wrong.
 
+## Coloured Output
+
+By default, the buildpack uses ANSI colour codes in its output to highlight key information (dependency names, versions, cache status). This matches the style of the original Ruby buildpack.
+
+To disable colour output, set either of the following environment variables:
+
+```bash
+cf set-env <APP> NO_COLOR 1
+```
+
+or the buildpack-specific variant:
+
+```bash
+cf set-env <APP> BP_NO_COLOR 1
+```
+
+`NO_COLOR` follows the [no-color.org](https://no-color.org/) standard and is respected by many CLI tools. Either variable disables all ANSI colour codes in the buildpack output.
+
 ## Debug Logging
 By default the buildpack is very quiet, only informing you about big things going right.  Behind the scenes however, it logs an incredible amount of information about each attempt at staging.  If your application has staged and is running, but not the way you expected it to, you can get the contents of the debug log by running the following command
 
