@@ -86,7 +86,7 @@ Sometimes logging just isn't going to cut it for debugging. There are times when
 
 ### Requirements
 
-The buildpack API consists of three bash scripts. This means that if you've got a Unix like environment with Ruby installed at an appropriate level, a filesystem that looks like what Cloud Foundry will present to the buildpack and a local copy of your buildpack, you can run the bash scripts locally.
+The buildpack API consists of bash scripts. This means that if you've got a Unix like environment with a filesystem that looks like what Cloud Foundry will present to the buildpack and a local copy of your buildpack, you can run the bash scripts locally.
 
 ### Example invocation
 
@@ -110,7 +110,7 @@ $ $BUILDPACK_ROOT/bin/compile . $TMPDIR
 -----> Downloading Play Framework Auto Reconfiguration 1.4.0_RELEASE from https://java-buildpack.cloudfoundry.org/auto-reconfiguration/auto-reconfiguration-1.4.0_RELEASE.jar (found in cache)
 -----> Downloading Spring Auto Reconfiguration 1.4.0_RELEASE from https://java-buildpack.cloudfoundry.org/auto-reconfiguration/auto-reconfiguration-1.4.0_RELEASE.jar (found in cache)
 
-$ $BUILDPACK_ROOT/bin/release . | ruby -e "require \"yaml\"; puts YAML.load(STDIN.read)[\"default_process_types\"][\"web\"]"
+$ $BUILDPACK_ROOT/bin/release . | sed -n "s/^  web: '\\(.*\\)'$/\\1/p" | sed "s/''/'/g; s/exec //"
 PATH=$PWD/.java-buildpack/open_jdk_jre/bin:$PATH JAVA_HOME=$PWD/.java-buildpack/open_jdk_jre $PWD/play-application-1.0.0.BUILD-SNAPSHOT/bin/play-application -J-Djava.io.tmpdir=$TMPDIR -J-XX:MaxPermSize=64M -J-XX:PermSize=64M -J-javaagent:$PWD/.java-buildpack/app_dynamics_agent/javaagent.jar -J-Dappdynamics.agent.applicationName='' -J-Dappdynamics.agent.tierName='Cloud Foundry' -J-Dappdynamics.agent.nodeName=$(expr "$VCAP_APPLICATION" : '.*instance_id[": ]*"\([a-z0-9]\+\)".*') -J-Dappdynamics.agent.accountAccessKey=[REDACTED] -J-Dappdynamics.agent.accountName=[REDACTED] -J-Dappdynamics.controller.hostName=[REDACTED] -J-Dappdynamics.controller.port=443 -J-Dappdynamics.controller.ssl.enabled=true -J-Dhttp.port=$PORT
 ```
 
@@ -131,7 +131,7 @@ Running the different stages of the buildpack lifecycle can be made simpler with
 ```bash
 $ alias detect='$BUILDPACK_ROOT/bin/detect .'
 $ alias compile='$BUILDPACK_ROOT/bin/compile . $TMPDIR'
-$ alias release='$BUILDPACK_ROOT/bin/release . | ruby -e "require \"yaml\"; puts YAML.load(STDIN.read)[\"default_process_types\"][\"web\"]" | sed "s| exec||"'
+$ release() { $BUILDPACK_ROOT/bin/release . | sed -n "s/^  web: '\\(.*\\)'$/\\1/p" | sed "s/''/'/g; s/exec //"; }
 ```
 
 [d]: extending-logging.md#configuration

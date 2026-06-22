@@ -24,10 +24,10 @@ Switchblade is a Go-based integration testing framework that supports both Cloud
 First, create a buildpack zip file:
 
 ```bash
-bundle exec rake package
+./scripts/package.sh
 ```
 
-This will create a file like `java-buildpack-v4.x.x.zip` in the project root.
+This will create `build/buildpack.zip` in the project root.
 
 ### Run Integration Tests
 
@@ -35,7 +35,7 @@ Use the provided script to run the tests:
 
 ```bash
 # Test on Cloud Foundry (default)
-BUILDPACK_FILE=/path/to/java-buildpack-v4.x.x.zip ./scripts/integration.sh
+BUILDPACK_FILE=build/buildpack.zip ./scripts/integration.sh
 
 # Test on Docker (requires GitHub token)
 BUILDPACK_FILE=/path/to/java-buildpack-v4.x.x.zip \
@@ -43,10 +43,10 @@ GITHUB_TOKEN=your_github_token_here \
 ./scripts/integration.sh --platform docker
 
 # Run cached/offline tests
-BUILDPACK_FILE=/path/to/java-buildpack-v4.x.x.zip ./scripts/integration.sh --cached
+BUILDPACK_FILE=build/buildpack.zip ./scripts/integration.sh --cached
 
 # Specify a different stack
-BUILDPACK_FILE=/path/to/java-buildpack-v4.x.x.zip ./scripts/integration.sh --stack cflinuxfs4
+BUILDPACK_FILE=build/buildpack.zip ./scripts/integration.sh --stack cflinuxfs4
 ```
 
 ### Run Tests Directly with Go
@@ -57,16 +57,16 @@ You can also run the tests directly using Go:
 cd src/integration
 
 # Run all tests
-BUILDPACK_FILE=/path/to/buildpack.zip go test -v -timeout 30m
+BUILDPACK_FILE=../../build/buildpack.zip go test -v -timeout 30m
 
 # Run specific test suite
-BUILDPACK_FILE=/path/to/buildpack.zip go test -v -run TestIntegration/Tomcat
+BUILDPACK_FILE=../../build/buildpack.zip go test -v -run TestIntegration/Tomcat
 
 # Run on Docker
-BUILDPACK_FILE=/path/to/buildpack.zip go test -v -platform=docker
+BUILDPACK_FILE=../../build/buildpack.zip go test -v -platform=docker
 
 # Run offline tests
-BUILDPACK_FILE=/path/to/buildpack.zip go test -v -cached
+BUILDPACK_FILE=../../build/buildpack.zip go test -v -cached
 ```
 
 ## Test Organization
