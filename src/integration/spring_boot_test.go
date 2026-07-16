@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func testSpringBoot(platform switchblade.Platform, fixtures string) func(*testing.T, spec.G, spec.S) {
+func testSpringBoot(platform switchblade.Platform, fixtures string, sb3JarPath, sb4JarPath string) func(*testing.T, spec.G, spec.S) {
 	return func(t *testing.T, context spec.G, it spec.S) {
 		var (
 			Expect     = NewWithT(t).Expect
@@ -288,6 +288,113 @@ func testSpringBoot(platform switchblade.Platform, fixtures string) func(*testin
 					// No staging paths anywhere
 					Not(ContainSubstring("/tmp/contents")),
 				)).WithEndpoint("/jvm-args"))
+			})
+		})
+
+		// Tests using real Spring Boot fat jars from stokpop/java-test-applications@v1.0.0-SNAPSHOT.
+		// SB4 (java-main-application) exposes RuntimeUtils endpoints (via core module):
+		//   GET /active-profiles          -> ["cloud"] when java-cfenv activates cloud profile
+		//   GET /loaded-jars              -> full classloader chain URLs incl. BOOT-INF/lib/*
+		//   GET /spring-env?key=<prop>    -> Spring Environment property value
+		//   GET /environment-variables    -> raw env vars
+		//   GET /input-arguments          -> JVM input arguments (-javaagent etc.)
+		// SB3 (java-main-application-boot3) does not yet depend on core module — only GET / available.
+		// Cloud profile activation verified via build logs for SB3.
+		// TODO: Update SB3 assertions once stokpop/java-test-applications adds core to boot3 module.
+		context("with real Spring Boot fat jars: java-cfenv injection", func() {
+			it("SB3 (Spring Boot 3.x) -- java-cfenv 3.x, cloud profile via logs", func() {
+				if sb3JarPath == "" {
+					t.Skip("SB3 jar not available")
+				}
+				deployment, logs, err := platform.Deploy.
+					WithServices(map[string]switchblade.Service{
+						"db": {"uri": "postgres://host:5432/dbname"},
+					}).
+					WithEnv(map[string]string{
+						"BP_JAVA_VERSION":        "17",
+						"JBP_CONFIG_JAVA_CF_ENV": "{enabled: true}",
+					}).
+					Execute(name, sb3JarPath)
+				Expect(err).NotTo(HaveOccurred(), logs.String)
+
+				// Buildpack detected and injected correct java-cfenv 3.x
+				Expect(logs.String()).To(ContainSubstring("Java CF Env"))
+				Expect(logs.String()).To(ContainSubstring("3."))
+
+				// java-cfenv activated "cloud" profile — verified via Spring Boot startup log
+				// (SB3 jar doesn't expose /active-profiles endpoint yet)
+				// Use Eventually: RuntimeLogs() may be called before Spring Boot finishes starting.
+				Eventually(func() (string, error) {
+					return deployment.RuntimeLogs()
+				}).Should(ContainSubstring(`profile is active: "cloud"`))
+
+				// App is live
+				Eventually(deployment).Should(matchers.Serve(ContainSubstring("ok")).WithEndpoint("/"))
+			})
+
+			it("SB4 (Spring Boot 4.x) -- java-cfenv 4.x, cloud profile, loaded-jars, vcap mapping", func() {
+				if sb4JarPath == "" {
+					t.Skip("SB4 jar not available")
+				}
+				deployment, logs, err := platform.Deploy.
+					WithServices(map[string]switchblade.Service{
+						"db": {"uri": "postgres://host:5432/dbname"},
+					}).
+					WithEnv(map[string]string{
+						"BP_JAVA_VERSION":        "21",
+						"JBP_CONFIG_JAVA_CF_ENV": "{enabled: true}",
+					}).
+					Execute(name, sb4JarPath)
+				Expect(err).NotTo(HaveOccurred(), logs.String)
+
+				// Buildpack detected and injected correct java-cfenv 4.x
+				Expect(logs.String()).To(ContainSubstring("Java CF Env"))
+				Expect(logs.String()).To(ContainSubstring("4."))
+
+				// java-cfenv activated "cloud" profile — direct endpoint assertion
+				Eventually(deployment).Should(matchers.Serve(
+					ContainSubstring("cloud")).WithEndpoint("/active-profiles"))
+
+				// java-cfenv jar loaded by JarLauncher via BOOT-INF/lib symlink — visible in /loaded-jars
+				// (unlike /class-path which only shows JVM system classpath)
+				Eventually(deployment).Should(matchers.Serve(
+					ContainSubstring("java-cfenv")).WithEndpoint("/loaded-jars"))
+			})
+
+			it("SB4 (Spring Boot 4.x) -- java-cfenv 4.x, container-security-provider, cf-metrics-exporter", func() {
+				if sb4JarPath == "" {
+					t.Skip("SB4 jar not available")
+				}
+				deployment, logs, err := platform.Deploy.
+					WithServices(map[string]switchblade.Service{
+						"db": {"uri": "postgres://host:5432/dbname"},
+					}).
+					WithEnv(map[string]string{
+						"BP_JAVA_VERSION":             "21",
+						"JBP_CONFIG_JAVA_CF_ENV":      "{enabled: true}",
+						// cf-metrics-exporter: rpsType=random + enableLogEmitter requires no external infra
+						"CF_METRICS_EXPORTER_ENABLED": "true",
+						"CF_METRICS_EXPORTER_PROPS":   "rpsType=random,enableLogEmitter",
+					}).
+					Execute(name, sb4JarPath)
+				Expect(err).NotTo(HaveOccurred(), logs.String)
+
+				// java-cfenv: correct 4.x version detected and injected
+				Expect(logs.String()).To(ContainSubstring("Java CF Env"))
+				Expect(logs.String()).To(ContainSubstring("4."))
+
+				// cf-metrics-exporter: -javaagent present in JVM input arguments
+				Expect(logs.String()).To(ContainSubstring("CF Metrics Exporter"))
+				Eventually(deployment).Should(matchers.Serve(
+					ContainSubstring("cf-metrics-exporter")).WithEndpoint("/input-arguments"))
+
+				// container-security-provider: env var set at runtime
+				Eventually(deployment).Should(matchers.Serve(
+					ContainSubstring("CONTAINER_SECURITY_PROVIDER")).WithEndpoint("/environment-variables"))
+
+				// java-cfenv activated "cloud" profile
+				Eventually(deployment).Should(matchers.Serve(
+					ContainSubstring("cloud")).WithEndpoint("/active-profiles"))
 			})
 		})
 	}
