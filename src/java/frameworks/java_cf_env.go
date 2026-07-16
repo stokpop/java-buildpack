@@ -71,7 +71,6 @@ func (j *JavaCfEnvFramework) Supply() error {
 	} else {
 		j.context.Log.Debug("Resolved Java CF Env version pattern '%s' to %s", versionPattern, resolvedVersion)
 	}
-
 	// Install java-cfenv JAR
 	javaCfEnvDir := filepath.Join(j.context.Stager.DepDir(), "java_cf_env")
 	if err := j.context.Installer.InstallDependency(dep, javaCfEnvDir); err != nil {
@@ -86,7 +85,10 @@ func (j *JavaCfEnvFramework) Supply() error {
 func (j *JavaCfEnvFramework) Finalize() error {
 	// Add the JAR to additional libraries (classpath)
 	javaCfEnvDir := filepath.Join(j.context.Stager.DepDir(), "java_cf_env")
-	jarPattern := filepath.Join(javaCfEnvDir, "java-cfenv-*.jar")
+	// The CF mirror installs the jar as java-cfenv_<ver>_<stack>_<sha>.jar (underscores).
+	// Glob java-cfenv*.jar so this — and a hyphenated Maven name, if the uri is ever
+	// pointed directly at Maven Central — both match.
+	jarPattern := filepath.Join(javaCfEnvDir, "java-cfenv*.jar")
 
 	matches, err := filepath.Glob(jarPattern)
 	if err != nil || len(matches) == 0 {
