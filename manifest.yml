@@ -113,7 +113,7 @@ default_versions:
 - name: java-memory-assistant-cleanup
   version: 0.x
 - name: your-kit-profiler
-  version: 2025.x
+  version: 2026.x
 - name: jprofiler-profiler
   version: 16.x
 - name: sealights-agent
@@ -555,14 +555,14 @@ dependencies:
   source: https://dlcdn.apache.org/skywalking/java-agent/9.6.0/apache-skywalking-java-agent-9.6.0.tgz
   source_sha256: e17d512d4ee5575ebb7d705b3b9760f1cc2f0df7f6f4061beecaa352c94a43ad
 - name: splunk-otel-javaagent
-  version: 2.31.0
-  uri: https://buildpacks.cloudfoundry.org/dependencies/splunk-otel-javaagent/splunk-otel-javaagent_2.31.0_linux_noarch_any-stack_cb5f1f3b.jar
-  sha256: cb5f1f3ba9466061ad79a9d26b340a38100d07d1e83d0a9e5057bffeb3a46283
+  version: 2.31.1
+  uri: https://buildpacks.cloudfoundry.org/dependencies/splunk-otel-javaagent/splunk-otel-javaagent_2.31.1_linux_noarch_any-stack_234f5b13.jar
+  sha256: 234f5b138c71dce938a6b71b8ecc0f9a2b0af5908a9a63a60aa9e65f1d24f925
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://github.com/signalfx/splunk-otel-java/releases/download/v2.31.0/splunk-otel-javaagent.jar
-  source_sha256: cb5f1f3ba9466061ad79a9d26b340a38100d07d1e83d0a9e5057bffeb3a46283
+  source: https://github.com/signalfx/splunk-otel-java/releases/download/v2.31.1/splunk-otel-javaagent.jar
+  source_sha256: 234f5b138c71dce938a6b71b8ecc0f9a2b0af5908a9a63a60aa9e65f1d24f925
 - name: tomcat
   version: 9.0.121
   uri: https://buildpacks.cloudfoundry.org/dependencies/tomcat/tomcat_9.0.121_linux_noarch_any-stack_d1a80450.tgz
@@ -618,14 +618,14 @@ dependencies:
   source: https://repo1.maven.org/maven2/org/cloudfoundry/tomcat-logging-support/3.4.0.RELEASE/tomcat-logging-support-3.4.0.RELEASE.jar
   source_sha256: 07de9efe8dda4c67dec6183ec1d59953abf1372cd71fe276fc4598739bd70667
 - name: your-kit-profiler
-  version: 2025.9.191
-  uri: https://buildpacks.cloudfoundry.org/dependencies/your-kit-profiler/your-kit-profiler_2025.9.191_linux_x64_any-stack_5e79eab6.zip
-  sha256: 5e79eab6bc02c70b30600c3d2c390147dd458d8f5488aa2abebb67525af7f26e
+  version: 2026.3.176
+  uri: https://buildpacks.cloudfoundry.org/dependencies/your-kit-profiler/your-kit-profiler_2026.3.176_linux_x64_cflinuxfs4_b12d3f13.zip
+  sha256: b12d3f1322e866153a64df87dc6002a5aaea47bdafe6e1235e10b5b22b4fb84b
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://download.yourkit.com/yjp/2025.9/YourKit-JavaProfiler-2025.9-b191-x64.zip
-  source_sha256: 5e79eab6bc02c70b30600c3d2c390147dd458d8f5488aa2abebb67525af7f26e
+  source: https://download.yourkit.com/yjp/2026.3.176/YourKit-Java-Profiler-2026.3.176-x64.zip
+  source_sha256: ''
 - name: zulu
   version: 8.0.504
   uri: https://buildpacks.cloudfoundry.org/dependencies/zulu/zulu_8.0.504_linux_x64_cflinuxfs4_f443c5f5.tgz
