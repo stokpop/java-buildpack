@@ -299,22 +299,22 @@ dependencies:
   source: https://repo1.maven.org/maven2/com/contrastsecurity/contrast-agent/6.34.0/contrast-agent-6.34.0.jar
   source_sha256: ''
 - name: datadog-javaagent
-  version: 1.65.1
-  uri: https://buildpacks.cloudfoundry.org/dependencies/datadog-javaagent/datadog-javaagent_1.65.1_linux_noarch_any-stack_04fa3c1e.jar
-  sha256: 04fa3c1ec79d6bf112f9b115465b2f41f352474b7aeb4178961adf4b24ff351d
+  version: 1.66.0
+  uri: https://buildpacks.cloudfoundry.org/dependencies/datadog-javaagent/datadog-javaagent_1.66.0_linux_noarch_any-stack_5f0eb511.jar
+  sha256: 5f0eb51160fade367d97404624561b6666f7475fb1453a7a73237eb643e398d8
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://repo1.maven.org/maven2/com/datadoghq/dd-java-agent/1.65.1/dd-java-agent-1.65.1.jar
+  source: https://repo1.maven.org/maven2/com/datadoghq/dd-java-agent/1.66.0/dd-java-agent-1.66.0.jar
   source_sha256: ''
 - name: elastic-apm-agent
-  version: 1.56.0
-  uri: https://buildpacks.cloudfoundry.org/dependencies/elastic-apm-agent/elastic-apm-agent_1.56.0_linux_noarch_any-stack_4595ce67.jar
-  sha256: 4595ce678bfe3a3420ada95356bc85c241e287de0220251dec9d390bcdeaf2f5
+  version: 1.57.0
+  uri: https://buildpacks.cloudfoundry.org/dependencies/elastic-apm-agent/elastic-apm-agent_1.57.0_linux_noarch_any-stack_c8a9f4c3.jar
+  sha256: c8a9f4c3b2161df152bfe9adff8138c0e4a3fcc64db2c858fef672ef8efd1f89
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://repo1.maven.org/maven2/co/elastic/apm/elastic-apm-agent/1.56.0/elastic-apm-agent-1.56.0.jar
+  source: https://repo1.maven.org/maven2/co/elastic/apm/elastic-apm-agent/1.57.0/elastic-apm-agent-1.57.0.jar
   source_sha256: ''
 - name: google-stackdriver-profiler
   version: 0.4.0
@@ -342,22 +342,22 @@ dependencies:
   source: https://repo1.maven.org/maven2/org/jacoco/jacoco/0.8.15/jacoco-0.8.15.zip
   source_sha256: ''
 - name: java-cfenv
-  version: 3.5.2
-  uri: https://buildpacks.cloudfoundry.org/dependencies/java-cfenv/java-cfenv_3.5.2_linux_noarch_any-stack_4047067e.jar
-  sha256: 4047067e209937778c136c2f096f73431aff2c1c037015870abcaa66fae4f43d
+  version: 3.5.3
+  uri: https://buildpacks.cloudfoundry.org/dependencies/java-cfenv/java-cfenv_3.5.3_linux_noarch_any-stack_d78161fa.jar
+  sha256: d78161fac0ebe06056c560a424f728c248d3a6a2c59a78c26b7d1cea46a72dde
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://repo1.maven.org/maven2/io/pivotal/cfenv/java-cfenv-all/3.5.2/java-cfenv-all-3.5.2.jar
+  source: https://repo1.maven.org/maven2/io/pivotal/cfenv/java-cfenv-all/3.5.3/java-cfenv-all-3.5.3.jar
   source_sha256: ''
 - name: java-cfenv
-  version: 4.0.1
-  uri: https://buildpacks.cloudfoundry.org/dependencies/java-cfenv/java-cfenv_4.0.1_linux_noarch_any-stack_b119e915.jar
-  sha256: b119e9155098dad907943cc7ddd8239227b6f0fb407354acb56d14fe3ad95169
+  version: 4.0.2
+  uri: https://buildpacks.cloudfoundry.org/dependencies/java-cfenv/java-cfenv_4.0.2_linux_noarch_any-stack_349fc91f.jar
+  sha256: 349fc91f08a3db2d89b343b9f683b40e9bc0f30b8780f2cc5a51bd3e27759493
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://repo1.maven.org/maven2/io/pivotal/cfenv/java-cfenv-all/4.0.1/java-cfenv-all-4.0.1.jar
+  source: https://repo1.maven.org/maven2/io/pivotal/cfenv/java-cfenv-all/4.0.2/java-cfenv-all-4.0.2.jar
   source_sha256: ''
 - name: java-memory-assistant
   version: 0.5.0
@@ -383,14 +383,14 @@ dependencies:
   source: https://download-gcdn.ej-technologies.com/jprofiler/jprofiler_linux_16_2_1.tar.gz
   source_sha256: edf8f42cfb6c0021a60820e28b372d7c85254e25b7d105c76f436ef0459e53c3
 - name: jrebel
-  version: 2026.3.1
-  uri: https://buildpacks.cloudfoundry.org/dependencies/jrebel/jrebel_2026.3.1_linux_noarch_any-stack_b04ebd0e.zip
-  sha256: b04ebd0eecc25458343442c62ba009311a370a2c248b8ebd5048bfdaa50fa37b
+  version: 2026.3.2
+  uri: https://buildpacks.cloudfoundry.org/dependencies/jrebel/jrebel_2026.3.2_linux_noarch_any-stack_a24bb428.zip
+  sha256: a24bb4285f412af6fb08d88d8bcf33e1f70787435cbe1d6547bd83439289fd7f
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://dl.zeroturnaround.com/jrebel/releases/jrebel-2026.3.1-nosetup.zip
-  source_sha256: b04ebd0eecc25458343442c62ba009311a370a2c248b8ebd5048bfdaa50fa37b
+  source: https://dl.zeroturnaround.com/jrebel/releases/jrebel-2026.3.2-nosetup.zip
+  source_sha256: a24bb4285f412af6fb08d88d8bcf33e1f70787435cbe1d6547bd83439289fd7f
 - name: jvmkill
   version: 1.17.0
   uri: https://java-buildpack.cloudfoundry.org/jvmkill/jammy/x86_64/jvmkill-1.17.0-RELEASE.so
@@ -537,14 +537,14 @@ dependencies:
   source: https://github.com/SAP/SapMachine/releases/download/sapmachine-25.0.4/sapmachine-jre-25.0.4_linux-x64_bin.tar.gz
   source_sha256: 45822a0180c0b1b5afd789a0d4bc3442d6841605e3aff87c731156e3ed73d39c
 - name: sealights-agent
-  version: 4.0.2815
-  uri: https://buildpacks.cloudfoundry.org/dependencies/sealights-agent/sealights-agent_4.0.2815_linux_noarch_any-stack_e84c2ca4.zip
-  sha256: e84c2ca46b57878168b80851a6bd3249c7a20d738679d692b5867110941f293d
+  version: 4.0.2830
+  uri: https://buildpacks.cloudfoundry.org/dependencies/sealights-agent/sealights-agent_4.0.2830_linux_noarch_any-stack_5872b561.zip
+  sha256: 5872b561ac80b6f86fc251d14cf7a217b6337e5709776b7fea489ffccb31f124
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://agents.sealights.co/sealights-java/sealights-java-4.0.2815.zip
-  source_sha256: e84c2ca46b57878168b80851a6bd3249c7a20d738679d692b5867110941f293d
+  source: https://agents.sealights.co/sealights-java/sealights-java-4.0.2830.zip
+  source_sha256: 5872b561ac80b6f86fc251d14cf7a217b6337e5709776b7fea489ffccb31f124
 - name: skywalking-agent
   version: 9.6.0
   uri: https://buildpacks.cloudfoundry.org/dependencies/skywalking-agent/skywalking-agent_9.6.0_linux_noarch_any-stack_e17d512d.tgz
