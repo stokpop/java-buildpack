@@ -254,14 +254,14 @@ dependencies:
   source: https://repo1.maven.org/maven2/org/cloudfoundry/auto-reconfiguration/2.12.0/auto-reconfiguration-2.12.0-RELEASE.jar
   source_sha256: e791ccfcfee9c0d299d07474d9bfcbfcbebf1181323be601220c8a823062ab99
 - name: azure-application-insights
-  version: 3.7.9
-  uri: https://buildpacks.cloudfoundry.org/dependencies/azure-application-insights/azure-application-insights_3.7.9_linux_noarch_any-stack_4ab7a442.jar
-  sha256: 4ab7a442bf9defc7475d026c6b49042793ebb010c391a1db91ae07da0c04d848
+  version: 3.7.10
+  uri: https://buildpacks.cloudfoundry.org/dependencies/azure-application-insights/azure-application-insights_3.7.10_linux_noarch_any-stack_93a70c8f.jar
+  sha256: 93a70c8f5d364c7e777f6c4d1b235dba91aef8448bd3fa94359f1d7f3e2eb0ec
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.7.9/applicationinsights-agent-3.7.9.jar
-  source_sha256: 4ab7a442bf9defc7475d026c6b49042793ebb010c391a1db91ae07da0c04d848
+  source: https://github.com/microsoft/ApplicationInsights-Java/releases/download/3.7.10/applicationinsights-agent-3.7.10.jar
+  source_sha256: 93a70c8f5d364c7e777f6c4d1b235dba91aef8448bd3fa94359f1d7f3e2eb0ec
 - name: cf-metrics-exporter
   version: 0.7.1
   uri: https://buildpacks.cloudfoundry.org/dependencies/cf-metrics-exporter/cf-metrics-exporter_0.7.1_linux_noarch_any-stack_7ebabd3f.jar
@@ -290,13 +290,13 @@ dependencies:
   source: https://repo1.maven.org/maven2/org/cloudfoundry/container-security-provider/1.20.0/container-security-provider-1.20.0-RELEASE.jar
   source_sha256: e791ccfcfee9c0d299d07474d9bfcbfcbebf1181323be601220c8a823062ab99
 - name: contrast-security
-  version: 6.34.0
-  uri: https://buildpacks.cloudfoundry.org/dependencies/contrast-security/contrast-security_6.34.0_linux_noarch_any-stack_e6ed9498.jar
-  sha256: e6ed9498ae1cfe96f289d5219c0bfb71c4c0cbf30bf98a776fd4fb1884194c94
+  version: 6.35.0
+  uri: https://buildpacks.cloudfoundry.org/dependencies/contrast-security/contrast-security_6.35.0_linux_noarch_any-stack_8cf85e42.jar
+  sha256: 8cf85e42fd659264acf5028bc366cf052ee757283133aa47a1f2c0e6087af00a
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://repo1.maven.org/maven2/com/contrastsecurity/contrast-agent/6.34.0/contrast-agent-6.34.0.jar
+  source: https://repo1.maven.org/maven2/com/contrastsecurity/contrast-agent/6.35.0/contrast-agent-6.35.0.jar
   source_sha256: ''
 - name: datadog-javaagent
   version: 1.66.0
@@ -564,31 +564,31 @@ dependencies:
   source: https://github.com/signalfx/splunk-otel-java/releases/download/v2.31.1/splunk-otel-javaagent.jar
   source_sha256: 234f5b138c71dce938a6b71b8ecc0f9a2b0af5908a9a63a60aa9e65f1d24f925
 - name: tomcat
-  version: 9.0.121
-  uri: https://buildpacks.cloudfoundry.org/dependencies/tomcat/tomcat_9.0.121_linux_noarch_any-stack_d1a80450.tgz
-  sha256: d1a804502cddfd1c1436c1c37809ed4cb807a9c64a8a35fe1747d3ba9a0edeab
+  version: 9.0.122
+  uri: https://buildpacks.cloudfoundry.org/dependencies/tomcat/tomcat_9.0.122_linux_noarch_any-stack_d8ec7e51.tgz
+  sha256: d8ec7e512e1450d23bceb14e93ac647ad20524ae8457a6eef529c077f8829890
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.121/bin/apache-tomcat-9.0.121.tar.gz
+  source: https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.122/bin/apache-tomcat-9.0.122.tar.gz
   source_sha256: ''
 - name: tomcat
-  version: 10.1.59
-  uri: https://buildpacks.cloudfoundry.org/dependencies/tomcat/tomcat_10.1.59_linux_noarch_any-stack_15e435e8.tgz
-  sha256: 15e435e8ecafd30e500dec7cd30fc289aed4cd8743db14d55024896be77d9241
+  version: 10.1.60
+  uri: https://buildpacks.cloudfoundry.org/dependencies/tomcat/tomcat_10.1.60_linux_noarch_any-stack_ba8998cb.tgz
+  sha256: ba8998cb41b3695f3c2d47224c70f44035e9c6385652fdafdb64ac31c354efbd
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://archive.apache.org/dist/tomcat/tomcat-10/v10.1.59/bin/apache-tomcat-10.1.59.tar.gz
+  source: https://archive.apache.org/dist/tomcat/tomcat-10/v10.1.60/bin/apache-tomcat-10.1.60.tar.gz
   source_sha256: ''
 - name: tomcat
-  version: 11.0.25
-  uri: https://buildpacks.cloudfoundry.org/dependencies/tomcat/tomcat_11.0.25_linux_noarch_any-stack_071ae2c6.tgz
-  sha256: 071ae2c6213e3c02c58b8581113b7887a96ef2756439b3c5be36fa6aec350090
+  version: 11.0.26
+  uri: https://buildpacks.cloudfoundry.org/dependencies/tomcat/tomcat_11.0.26_linux_noarch_any-stack_6b6ac79c.tgz
+  sha256: 6b6ac79c15707d1d2bf54c698b1a19c046c21a56fc8ddf82a0845cc54df68324
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.25/bin/apache-tomcat-11.0.25.tar.gz
+  source: https://archive.apache.org/dist/tomcat/tomcat-11/v11.0.26/bin/apache-tomcat-11.0.26.tar.gz
   source_sha256: ''
 - name: tomcat-access-logging-support
   version: 3.4.0
