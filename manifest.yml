@@ -273,12 +273,12 @@ dependencies:
   source_sha256: ''
 - name: client-certificate-mapper
   version: 2.1.0
-  uri: https://github.com/stokpop/java-buildpack-client-certificate-mapper/releases/download/snapshot-test-20260922/client-certificate-mapper_2.1.0_linux_noarch_any-stack_ee233a80.jar
-  sha256: ee233a8049f1b403b8a33c319583fb3c18894d645df4e37f0b1f4ee12c7d6be3
+  uri: https://github.com/stokpop/java-buildpack-client-certificate-mapper/releases/download/snapshot-test-20260922b/client-certificate-mapper_2.1.0_linux_noarch_any-stack_e65f1f05.jar
+  sha256: e65f1f05bb18afccbbdc0f098c9176ed2e2ed6f90395dbcee58af4d05051d315
   cf_stacks:
   - cflinuxfs4
   - cflinuxfs5
-  source: https://github.com/cloudfoundry/java-buildpack-client-certificate-mapper/pull/20/commits/c66c270
+  source: https://github.com/cloudfoundry/java-buildpack-client-certificate-mapper/pull/20/commits/913e2fe
   source_sha256: ''
 - name: container-security-provider
   version: 1.20.0
