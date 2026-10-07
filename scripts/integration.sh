@@ -26,11 +26,16 @@ OPTIONS
   --stack <stack>                    Stack to use for tests (default: cflinuxfs4)
   --keep-failed-containers           Preserve failed test containers for debugging (default: false)
 
+ENVIRONMENT
+  GINKGO_NODES                       Number of tests run in parallel with --parallel true (default: 3)
+  RERUN_FAILS                        Re-run each failed test up to this many times (default: 2, 0 disables)
+  RERUN_FAILS_MAX_FAILURES           Do not re-run when more tests fail than this (default: 10)
+
 EXAMPLES
   # Serial mode
   ./scripts/integration.sh --platform docker
 
-  # Parallel mode (uses GOMAXPROCS=2)
+  # Parallel mode (runs GINKGO_NODES tests at a time, default 3)
   ./scripts/integration.sh --platform docker --parallel true
 
   # Keep failed containers for debugging
@@ -110,6 +115,12 @@ function main() {
   specs::run "${cached}" "${parallel}" "${stack}" "${platform}" "${token}" "${keep_failed}"
 }
 
+# Integration tests run through gotestsum so that only failed tests are re-run
+# (e.g. after transient CF infrastructure errors) instead of the whole suite.
+# RERUN_FAILS: max re-runs per failed test (0 disables).
+# RERUN_FAILS_MAX_FAILURES: skip re-runs when more tests fail, as that indicates a real breakage.
+GOTESTSUM_VERSION="v1.13.0"
+
 function specs::run() {
   local cached parallel stack platform token keep_failed
   cached="${1}"
@@ -129,7 +140,9 @@ function specs::run() {
   nodes=1
 
   if [[ "${parallel}" == "true" ]]; then
-    nodes=3
+    # Honour GINKGO_NODES from the CI pipeline (defaults to 3) so parallelism can be
+    # tuned per environment without changing this script.
+    nodes="${GINKGO_NODES:-3}"
     serial_flag=""
   fi
 
@@ -142,12 +155,17 @@ function specs::run() {
   CF_STACK="${stack}" \
   BUILDPACK_FILE="${BUILDPACK_FILE:-"${buildpack_file}"}" \
   GOMAXPROCS="${GOMAXPROCS:-"${nodes}"}" \
-    go test \
+    go run "gotest.tools/gotestsum@${GOTESTSUM_VERSION}" \
+      --format standard-verbose \
+      --rerun-fails="${RERUN_FAILS:-2}" \
+      --rerun-fails-max-failures="${RERUN_FAILS_MAX_FAILURES:-10}" \
+      --packages "${ROOTDIR}/src/integration" \
+      -- \
       -count=1 \
       -timeout=0 \
       -mod vendor \
-      -v \
-        "${ROOTDIR}/src/integration" \
+      -parallel "${nodes}" \
+      -args \
          ${cached_flag} \
          ${platform_flag} \
          ${token_flag} \
