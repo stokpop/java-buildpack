@@ -213,6 +213,40 @@ var _ = Describe("Play Container", func() {
 			})
 		})
 
+		Context("with Play 2.2 dist application with a start script", func() {
+			BeforeEach(func() {
+				os.MkdirAll(filepath.Join(buildDir, "application-root", "bin"), 0755)
+				os.WriteFile(filepath.Join(buildDir, "application-root", "bin", "my-app"), []byte("#!/bin/sh"), 0755)
+				os.MkdirAll(filepath.Join(buildDir, "application-root", "lib"), 0755)
+				os.WriteFile(filepath.Join(buildDir, "application-root", "lib", "com.typesafe.play.play_2.10-2.2.0.jar"), []byte("fake"), 0644)
+				_, err := container.Detect()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("starts the script via javaexec so JAVA_OPTS is tokenized safely (#1441)", func() {
+				cmd, err := container.Release()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmd).To(Equal("exec $DEPS_DIR/0/bin/javaexec --play-script $HOME/application-root/bin/my-app"))
+			})
+		})
+
+		Context("with Play 2.2 staged application with a start script", func() {
+			BeforeEach(func() {
+				os.MkdirAll(filepath.Join(buildDir, "lib"), 0755)
+				os.WriteFile(filepath.Join(buildDir, "lib", "com.typesafe.play.play_2.10-2.2.0.jar"), []byte("fake"), 0644)
+				os.MkdirAll(filepath.Join(buildDir, "bin"), 0755)
+				os.WriteFile(filepath.Join(buildDir, "bin", "my-app"), []byte("#!/bin/sh"), 0755)
+				_, err := container.Detect()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("starts the script via javaexec so JAVA_OPTS is tokenized safely (#1441)", func() {
+				cmd, err := container.Release()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cmd).To(Equal("exec $DEPS_DIR/0/bin/javaexec --play-script $HOME/bin/my-app"))
+			})
+		})
+
 		Context("when not detected", func() {
 			It("returns error", func() {
 				_, err := container.Release()

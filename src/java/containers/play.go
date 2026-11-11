@@ -539,6 +539,11 @@ func (p *PlayContainer) Release() (string, error) {
 		// Use absolute path with $HOME prefix to ensure the script can be found at runtime
 		// Cloud Foundry sets $HOME to the application root directory
 		cmd = fmt.Sprintf("$HOME/%s", p.startScript)
+		if p.playType == "post22_dist" || p.playType == "post22_staged" {
+			// sbt-native-packager scripts expand $JAVA_OPTS unquoted, splitting multi-word
+			// values (#1441). javaexec tokenizes JAVA_OPTS and passes it as -J<flag> arguments.
+			cmd = fmt.Sprintf("exec $DEPS_DIR/%s/bin/javaexec --play-script %s", p.context.Stager.DepsIdx(), cmd)
+		}
 	} else {
 		// No start script - use java command with NettyServer
 		// This is for staged apps without start scripts

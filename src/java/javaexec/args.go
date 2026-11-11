@@ -13,3 +13,18 @@ func BuildArgs(java, javaOpts string, trusted []string) []string {
 	argv = append(argv, trusted...)
 	return argv
 }
+
+// BuildScriptArgs assembles the argv for execing a bundled start script (e.g. an
+// sbt-native-packager script) instead of the JVM. Each tokenized JAVA_OPTS entry
+// is passed as a -J<flag> argument, which those scripts collect into a properly
+// quoted array, rather than relying on the script word-splitting $JAVA_OPTS.
+func BuildScriptArgs(script, javaOpts string, trusted []string) []string {
+	opts := TokenizeJavaOpts(javaOpts)
+	argv := make([]string, 0, 1+len(opts)+len(trusted))
+	argv = append(argv, script)
+	for _, opt := range opts {
+		argv = append(argv, "-J"+opt)
+	}
+	argv = append(argv, trusted...)
+	return argv
+}

@@ -94,18 +94,10 @@ func testPlay(platform switchblade.Platform, fixtures string) func(*testing.T, s
 				Eventually(deployment).Should(matchers.Serve(Not(BeEmpty())))
 			})
 
-			// Regression test for #1301, currently skipped: play_2.2_staged ships its own
-			// bin/play-application start script, so the JVM is launched by that script, not by
-			// the buildpack's shell-free javaexec launcher — javaexec is only used when an app
-			// has no bundled start script. The script splits $JAVA_OPTS on whitespace without
-			// quoting, so this value's embedded spaces break the launch there; that is a
-			// pre-existing limitation of apps with their own start scripts, independent of the
-			// javaexec fix. Needs either a non-start-script Play fixture or routing the
-			// start-script path through javaexec (e.g. via the `-J<flag>` convention) before this
-			// can be re-enabled. Tracked in
-			// https://github.com/cloudfoundry/java-buildpack/issues/1441.
+			// Regression test for #1301/#1441: play_2.2_staged ships its own bin/play-application
+			// start script, which is launched via `javaexec --play-script` so that JAVA_OPTS
+			// reaches the script as -J<flag> arguments instead of being word-split.
 			it("starts via the javaexec launcher with unsafe JAVA_OPTS (#1301)", func() {
-				t.Skip("blocked on https://github.com/cloudfoundry/java-buildpack/issues/1441")
 				deployment, logs, err := platform.Deploy.
 					WithEnv(map[string]string{
 						"BP_JAVA_VERSION": "11",
