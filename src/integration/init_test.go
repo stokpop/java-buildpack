@@ -35,6 +35,9 @@ var settings struct {
 	SB3JarPath string
 	SB4JarPath string
 
+	// Fixture path of the dependency-free simple app: a JDK-only HttpServer that starts in under a second and runs on any supported Java.
+	SimpleJarPath string
+
 	// Fixture paths of the executable WAR/JAR archives from java-test-applications, keyed by artifact name.
 	ExecutableApps map[string]string
 }
@@ -79,11 +82,12 @@ func TestIntegration(t *testing.T) {
 	// Download real Spring Boot fat jars for java-cfenv integration tests.
 	// Skip in cached/offline mode — tests self-skip when paths are empty.
 	if !settings.Cached {
-		sb3Jar, sb4Jar, cleanupJars, err := downloadJavaTestAppsJars(settings.Platform)
+		sb3Jar, sb4Jar, simpleJar, cleanupJars, err := downloadJavaTestAppsJars(settings.Platform)
 		Expect(err).NotTo(HaveOccurred(), "failed to download java-test-applications jars for integration tests")
 		defer cleanupJars()
 		settings.SB3JarPath = sb3Jar
 		settings.SB4JarPath = sb4Jar
+		settings.SimpleJarPath = simpleJar
 
 		apps, cleanupApps, err := downloadJavaTestApps(settings.Platform, executableWarName, executableWarBoot3Name, mainClassWarName)
 		Expect(err).NotTo(HaveOccurred(), "failed to download java-test-applications executable archives for integration tests")
@@ -100,7 +104,7 @@ func TestIntegration(t *testing.T) {
 
 	// Core container tests
 	suite("Tomcat", testTomcat(platform, fixtures))
-	suite("SpringBoot", testSpringBoot(platform, fixtures, settings.SB3JarPath, settings.SB4JarPath))
+	suite("SpringBoot", testSpringBoot(platform, fixtures, settings.SB3JarPath, settings.SB4JarPath, settings.SimpleJarPath))
 	suite("JavaMain", testJavaMain(platform, fixtures))
 	suite("DistZip", testDistZip(platform, fixtures))
 	suite("ExecutableArchives", testExecutableArchives(platform, settings.ExecutableApps))
@@ -113,7 +117,7 @@ func TestIntegration(t *testing.T) {
 	suite("ContainerDetection", testContainerDetectionErrors(platform, fixtures))
 
 	// Framework tests (APM agents, security providers, etc.)
-	suite("Frameworks", testFrameworks(platform, fixtures, settings.SB3JarPath, settings.SB4JarPath))
+	suite("Frameworks", testFrameworks(platform, fixtures, settings.SB3JarPath, settings.SimpleJarPath))
 
 	suite.Run(t)
 

@@ -17,6 +17,7 @@ const (
 	javaTestAppsBaseURL    = "https://github.com/cloudfoundry/java-test-applications/releases/download/" + javaTestAppsReleaseTag
 	sb3JarName             = "java-main-application-boot3-" + javaTestAppsVersion + ".jar"
 	sb4JarName             = "java-main-application-" + javaTestAppsVersion + ".jar"
+	simpleJarName          = "simple-java-application-" + javaTestAppsVersion + ".jar"
 
 	executableWarName      = "executable-war-application-" + javaTestAppsVersion + ".war"
 	executableWarBoot3Name = "executable-war-application-boot3-" + javaTestAppsVersion + ".war"
@@ -33,7 +34,7 @@ func javaTestAppsURL(artifact string) string {
 	return base + "/" + artifact
 }
 
-// downloadJavaTestAppsJars downloads the pinned SB3 and SB4 fat jars.
+// downloadJavaTestAppsJars downloads the pinned SB3 and SB4 fat jars and the dependency-free simple app jar.
 // For Docker-mode tests, jars are extracted (exploded) into fixture directories
 // to simulate what real CF staging does: CF treats the pushed artifact as a zip
 // and extracts it before running the buildpack, so BOOT-INF/ and META-INF/
@@ -46,13 +47,13 @@ func javaTestAppsURL(artifact string) string {
 // delegates to `cf push -p` which handles zip extraction natively.
 // See https://github.com/cloudfoundry/switchblade/issues/134 for details.
 //
-// Returns (sb3FixturePath, sb4FixturePath, cleanup func, error).
-func downloadJavaTestAppsJars(platform string) (string, string, func(), error) {
-	paths, cleanup, err := downloadJavaTestApps(platform, sb3JarName, sb4JarName)
+// Returns (sb3FixturePath, sb4FixturePath, simpleFixturePath, cleanup func, error).
+func downloadJavaTestAppsJars(platform string) (string, string, string, func(), error) {
+	paths, cleanup, err := downloadJavaTestApps(platform, sb3JarName, sb4JarName, simpleJarName)
 	if err != nil {
-		return "", "", nil, err
+		return "", "", "", nil, err
 	}
-	return paths[sb3JarName], paths[sb4JarName], cleanup, nil
+	return paths[sb3JarName], paths[sb4JarName], paths[simpleJarName], cleanup, nil
 }
 
 // downloadJavaTestApps downloads the given release artifacts and returns a map from artifact name to the

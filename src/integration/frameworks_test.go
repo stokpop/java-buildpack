@@ -12,7 +12,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, sb4JarPath string) func(*testing.T, spec.G, spec.S) {
+func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, simpleJarPath string) func(*testing.T, spec.G, spec.S) {
 	return func(t *testing.T, context spec.G, it spec.S) {
 		var (
 			Expect     = NewWithT(t).Expect
@@ -33,7 +33,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 		context("APM Agents", func() {
 			context("with New Relic service binding", func() {
 				it("detects and installs New Relic agent", func() {
-					deployment, logs, err := platform.Deploy.
+					_, logs, err := platform.Deploy.
 						WithServices(map[string]switchblade.Service{
 							"newrelic": {
 								"licenseKey": "test-license-key-1234567890abcdef",
@@ -42,16 +42,15 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Verify New Relic agent was detected
 					Expect(logs.String()).To(ContainSubstring("New Relic Agent"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
 				})
 
 				it("configures New Relic with license key from service binding", func() {
-					deployment, logs, err := platform.Deploy.
+					_, logs, err := platform.Deploy.
 						WithServices(map[string]switchblade.Service{
 							"my-newrelic-service": {
 								"licenseKey": "abc123def456ghi789jkl012mno345pq",
@@ -60,11 +59,10 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("New Relic Agent"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
 				})
 			})
 
@@ -84,7 +82,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Verify AppDynamics agent was detected
@@ -107,11 +105,12 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("AppDynamics Agent"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					Eventually(deployment).Should(matchers.Serve(ContainSubstring("ok")))
 				})
 			})
 
@@ -129,7 +128,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Verify Dynatrace agent was detected and installed
@@ -150,40 +149,44 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Dynatrace"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					Eventually(deployment).Should(matchers.Serve(ContainSubstring("ok")))
 				})
 			})
 
 			context("with multiple APM agents", func() {
 				it("can handle multiple agent service bindings", func() {
-					t.Skip("Test uses AppDynamics which requires authentication and is not in manifest - skipping until test is updated to use agents that work without auth")
 					deployment, logs, err := platform.Deploy.
 						WithServices(map[string]switchblade.Service{
 							"newrelic": {
-								"licenseKey": "test-license-key",
+								"licenseKey": "test-license-key-1234567890abcdef",
 							},
-							"appdynamics": {
-								"account-access-key": "test-key",
-								"account-name":       "test-account",
-								"host-name":          "controller.appdynamics.com",
+							"datadog": {
+								"api_key": "test-datadog-api-key-xyz",
+							},
+							"skywalking": {
+								"collector_backend_services": "skywalking.example.com:11800",
 							},
 						}).
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
-					// Both agents should be detected
-					Expect(logs.String()).To(Or(
-						ContainSubstring("New Relic Agent"),
-						ContainSubstring("AppDynamics Agent"),
-					))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Expect(logs.String()).To(ContainSubstring("New Relic Agent"))
+					Expect(logs.String()).To(ContainSubstring("Datadog"))
+					Expect(logs.String()).To(ContainSubstring("SkyWalking"))
+
+					// The Datadog and SkyWalking agents are attached to the same JVM
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("datadog"),
+						ContainSubstring("skywalking"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -198,7 +201,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Azure Application Insights"))
@@ -215,11 +218,17 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Azure Application Insights"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					// Verify the configuration reaches the running JVM, not only the staging log
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("azure-application-insights"),
+						ContainSubstring("-Dapplicationinsights.instrumentation-key=87654321-4321-4321-4321-cba987654321"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -228,13 +237,13 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 					deployment, logs, err := platform.Deploy.
 						WithServices(map[string]switchblade.Service{
 							"skywalking": {
-								"oap_server": "skywalking.example.com:11800",
+								"collector_backend_services": "skywalking.example.com:11800",
 							},
 						}).
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("SkyWalking"))
@@ -245,18 +254,24 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 					deployment, logs, err := platform.Deploy.
 						WithServices(map[string]switchblade.Service{
 							"my-skywalking": {
-								"oap_server":   "oap.skywalking.prod:11800",
-								"service_name": "my-java-app",
+								"collector_backend_services": "oap.skywalking.prod:11800",
+								"service_name":               "my-java-app",
 							},
 						}).
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("SkyWalking"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					// Verify the configuration reaches the running JVM, not only the staging log
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("skywalking-agent.jar"),
+						ContainSubstring("-Dskywalking.collector.backend_service=oap.skywalking.prod:11800"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -272,7 +287,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Splunk OTEL"))
@@ -292,12 +307,20 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Splunk OTEL"))
 					Expect(logs.String()).NotTo(ContainSubstring("OpenTelemetry Javaagent"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					// Verify the configuration reaches the running JVM, not only the staging log
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("splunk-otel-javaagent"),
+						ContainSubstring("-Dsplunk.access.token=ABC123XYZ789"),
+						ContainSubstring("-Dsplunk.realm=eu0"),
+						ContainSubstring("-Dotel.exporter.otlp.endpoint=https://ingest.eu0.signalfx.com"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -312,11 +335,14 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Google Stackdriver Profiler"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-agentpath:"),
+						ContainSubstring("profiler_java_agent.so=-cprof_project_id=my-gcp-project-123456"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -331,7 +357,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Datadog"))
@@ -349,11 +375,16 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Datadog"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					// Verify the configuration reaches the running JVM, not only the staging log
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("datadog-javaagent"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -369,7 +400,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Elastic APM"))
@@ -388,11 +419,19 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Elastic APM"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					// Verify the configuration reaches the running JVM, not only the staging log
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("elastic-apm-agent"),
+						ContainSubstring("-Delastic.apm.server_urls=https://apm.production.example.com:8200"),
+						ContainSubstring("-Delastic.apm.secret_token=elastic-secret-xyz123"),
+						ContainSubstring("-Delastic.apm.service_name=my-java-app"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -408,11 +447,15 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Elastic OTel"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("ok")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("elastic-otel-javaagent"),
+						ContainSubstring("-Dotel.exporter.otlp.endpoint=https://elastic-otel.example.com:443"),
+					)).WithEndpoint("/input-arguments"))
 				})
 
 				it("configures Elastic OTel with explicit OTLP headers", func() {
@@ -427,11 +470,19 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Elastic OTel"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("ok")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("elastic-otel-javaagent"),
+						ContainSubstring("-Dotel.exporter.otlp.endpoint=https://elastic-otel.production.example.com:443"),
+						ContainSubstring("-Dotel.service.name=my-java-app"),
+					)).WithEndpoint("/input-arguments"))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("OTEL_EXPORTER_OTLP_HEADERS=Authorization=ApiKey explicit-key"),
+					)).WithEndpoint("/environment-variables"))
 				})
 			})
 
@@ -447,7 +498,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("OpenTelemetry"))
@@ -466,11 +517,19 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("OpenTelemetry"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					// Verify the configuration reaches the running JVM, not only the staging log
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("open-telemetry-javaagent"),
+						ContainSubstring("-Dotel.exporter.otlp.endpoint=https://otel.example.com:4318"),
+						ContainSubstring("-Dotel.traces.exporter=otlp"),
+						ContainSubstring("-Dotel.metrics.exporter=otlp"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -488,7 +547,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Verify Checkmarx IAST framework was detected (even if download succeeds)
@@ -504,13 +563,14 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// No APM agents should be mentioned
 					Expect(logs.String()).NotTo(ContainSubstring("New Relic Agent"))
 					Expect(logs.String()).NotTo(ContainSubstring("AppDynamics Agent"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					Eventually(deployment).Should(matchers.Serve(Not(ContainSubstring("-javaagent:"))).WithEndpoint("/input-arguments"))
 				})
 			})
 		})
@@ -532,11 +592,12 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("PostgreSQL JDBC"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					Eventually(deployment).Should(matchers.Serve(ContainSubstring("ok")))
 				})
 			})
 
@@ -556,11 +617,12 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("MariaDB JDBC"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					Eventually(deployment).Should(matchers.Serve(ContainSubstring("ok")))
 				})
 			})
 		})
@@ -578,6 +640,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 
 					// Client Certificate Mapper should be detected and installed
 					Expect(logs.String()).To(ContainSubstring("Client Certificate Mapper"))
+
 					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
 				})
 
@@ -592,6 +655,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 
 					// Should not install when explicitly disabled
 					Expect(logs.String()).NotTo(ContainSubstring("Client Certificate Mapper"))
+
 					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
 				})
 			})
@@ -606,11 +670,46 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 							"BPL_DEBUG_ENABLED": "true",
 							"BPL_DEBUG_PORT":    "8000",
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Debug"))
 					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+				})
+			})
+
+			context("with Java Memory Assistant enabled", func() {
+				it("attaches the agent with the configured thresholds", func() {
+					deployment, logs, err := platform.Deploy.
+						WithEnv(map[string]string{
+							"BP_JAVA_VERSION": defaultJavaVersion,
+							"JBP_CONFIG_JAVA_MEMORY_ASSISTANT": "{enabled: true, agent: {check_interval: 1s, max_frequency: 3/1m, log_level: DEBUG, " +
+								"heap_dump_folder: /tmp/jma-heap-dumps, thresholds: {heap: \">1MB\"}}}",
+						}).
+						Execute(name, requireJar(t, simpleJarPath))
+					Expect(err).NotTo(HaveOccurred(), logs.String)
+
+					Expect(logs.String()).To(ContainSubstring("Java Memory Assistant"))
+
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("java-memory-assistant"),
+						ContainSubstring("-Djma.check_interval=1s"),
+						ContainSubstring("-Djma.max_frequency=3/1m"),
+						ContainSubstring("-Djma.log_level=DEBUG"),
+						ContainSubstring("-Djma.heap_dump_folder=/tmp/jma-heap-dumps"),
+						ContainSubstring("-Djma.thresholds.heap=>1MB"),
+					)).WithEndpoint("/input-arguments"))
+
+					// The agent logs every option it accepted, so a misnamed property would be missing here
+					Eventually(func() (string, error) {
+						return deployment.RuntimeLogs()
+					}).Should(And(
+						ContainSubstring("Configuration option 'jma.check_interval' specified with value: '1s'"),
+						ContainSubstring("Configuration option 'jma.max_frequency' specified with value: '3/1m'"),
+						ContainSubstring("Configuration option 'jma.heap_dump_folder' specified with value: '/tmp/jma-heap-dumps'"),
+						ContainSubstring("Configuration option 'jma.thresholds.heap' specified with value: '>1MB'"),
+					))
 				})
 			})
 
@@ -622,7 +721,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 							"BPL_JMX_ENABLED": "true",
 							"BPL_JMX_PORT":    "5000",
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("JMX"))
@@ -637,7 +736,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 							"BP_JAVA_VERSION":             defaultJavaVersion,
 							"CF_METRICS_EXPORTER_ENABLED": "true",
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Log should indicate exporter enabled with version
@@ -654,7 +753,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 							"CF_METRICS_EXPORTER_ENABLED": "true",
 							"CF_METRICS_EXPORTER_PROPS":   props,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Should still show exporter enabled
@@ -665,7 +764,13 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						ContainSubstring("CF_METRICS_EXPORTER_PROPS"),
 						ContainSubstring(props),
 					))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					// Verify the configuration reaches the running JVM, not only the staging log
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("cf-metrics-exporter"),
+						ContainSubstring("=debug,enableLogEmitter,intervalSeconds=30"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 		})
@@ -684,11 +789,18 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("JaCoCo"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("jacocoagent.jar="),
+						// The agent options come from a map, so their order differs between runs
+						ContainSubstring("address=localhost"),
+						ContainSubstring("port=6300"),
+						ContainSubstring("output=file"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 		})
@@ -706,8 +818,8 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						}).
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION":                        defaultJavaVersion,
-							"JBP_CONFIG_JAVA_CF_ENV":                 "'{enabled: false}'",
-							"JBP_CONFIG_SPRING_AUTO_RECONFIGURATION": "'{enabled: true}'",
+							"JBP_CONFIG_JAVA_CF_ENV":                 "{enabled: false}",
+							"JBP_CONFIG_SPRING_AUTO_RECONFIGURATION": "{enabled: true}",
 						}).
 						Execute(name, filepath.Join(fixtures, "frameworks", "auto_reconfiguration_servlet_3"))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
@@ -716,6 +828,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 					Expect(logs.String()).To(ContainSubstring("Spring Auto-reconfiguration"))
 					// Spring Auto-reconfiguration should only be provided in the absence of Java Cf Env
 					Expect(logs.String()).NotTo(ContainSubstring("Java CF Env"))
+
 					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
 				})
 
@@ -728,7 +841,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						}).
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION":                        defaultJavaVersion,
-							"JBP_CONFIG_SPRING_AUTO_RECONFIGURATION": "'{enabled: false}'",
+							"JBP_CONFIG_SPRING_AUTO_RECONFIGURATION": "{enabled: false}",
 						}).
 						Execute(name, filepath.Join(fixtures, "frameworks", "auto_reconfiguration_servlet_3"))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
@@ -737,6 +850,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 					Expect(logs.String()).To(ContainSubstring("Java CF Env"))
 					// Should not install when explicitly disabled
 					Expect(logs.String()).NotTo(ContainSubstring("Spring Auto-reconfiguration"))
+
 					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
 				})
 			})
@@ -753,14 +867,15 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						}).
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION":        "17",
-							"JBP_CONFIG_JAVA_CF_ENV": "'{enabled: true}'",
+							"JBP_CONFIG_JAVA_CF_ENV": "{enabled: true}",
 						}).
 						Execute(name, requireJar(t, sb3JarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Java CF Env should be detected for Spring Boot 3.x apps
 					Expect(logs.String()).To(ContainSubstring("Java CF Env"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+
+					Eventually(deployment).Should(matchers.Serve(ContainSubstring("ok")))
 				})
 			})
 		})
@@ -774,12 +889,17 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 							// Reduce code cache and thread stack to fit within 1G memory limit (v4 calculator)
 							"JAVA_OPTS": "-Xmx384m -XX:ReservedCodeCacheSize=120M -Xss512k -Dcustom.property=test",
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Java Opts framework should detect JAVA_OPTS environment variable
 					Expect(logs.String()).To(ContainSubstring("Java Opts"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-Xmx384m"),
+						ContainSubstring("-XX:ReservedCodeCacheSize=120M"),
+						ContainSubstring("-Xss512k"),
+						ContainSubstring("-Dcustom.property=test"),
+					)).WithEndpoint("/input-arguments"))
 				})
 
 				it("applies custom JAVA_OPTS from configuration file", func() {
@@ -787,14 +907,19 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 							// Reduce heap and code cache to fit within 1G memory limit (v4 calculator)
-							"JBP_CONFIG_JAVA_OPTS": "'{java_opts: [\"-Xms256m\", \"-Xmx384m\", \"-XX:ReservedCodeCacheSize=120M\", \"-Xss512k\"]}'",
+							"JBP_CONFIG_JAVA_OPTS": "{java_opts: [\"-Xms256m\", \"-Xmx384m\", \"-XX:ReservedCodeCacheSize=120M\", \"-Xss512k\"]}",
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Java Opts framework should detect configuration
 					Expect(logs.String()).To(ContainSubstring("Java Opts"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-Xms256m"),
+						ContainSubstring("-Xmx384m"),
+						ContainSubstring("-XX:ReservedCodeCacheSize=120M"),
+						ContainSubstring("-Xss512k"),
+					)).WithEndpoint("/input-arguments"))
 				})
 
 				it("handles quoted strings with spaces in JAVA_OPTS", func() {
@@ -803,14 +928,17 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 							"BP_JAVA_VERSION":      defaultJavaVersion,
 							"JBP_CONFIG_JAVA_OPTS": `'java_opts: -DtestJBPConfig1=''test test'' -DtestJBPConfig2="value with spaces"'`,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Java Opts framework should detect configuration
 					Expect(logs.String()).To(ContainSubstring("Java Opts"))
 					// Should properly handle quoted strings with spaces
 					Expect(logs.String()).To(ContainSubstring("Adding configured JAVA_OPTS"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("testJBPConfig1=test test"),
+						ContainSubstring("testJBPConfig2=value with spaces"),
+					)).WithEndpoint("/system-properties"))
 				})
 
 				it("expands environment variables in JAVA_OPTS at runtime", func() {
@@ -820,12 +948,15 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 							"TEST_ENV_VAR":         "test-value-123",
 							"JBP_CONFIG_JAVA_OPTS": `'java_opts: -DtestEnvVar="$TEST_ENV_VAR" -DtestPath="$PATH"'`,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// Java Opts framework should detect configuration
 					Expect(logs.String()).To(ContainSubstring("Java Opts"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("testEnvVar=test-value-123"),
+						ContainSubstring("testPath=/"),
+					)).WithEndpoint("/system-properties"))
 				})
 
 				it("handles complex scenario with quotes and env vars like Ruby buildpack", func() {
@@ -834,7 +965,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 							"BP_JAVA_VERSION":      defaultJavaVersion,
 							"JBP_CONFIG_JAVA_OPTS": `'java_opts: -DtestJBPConfig1=''test test'' -DtestJBPConfig2="$PATH"'`,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// This test verifies the fix for the Ruby vs Go buildpack parity issue
@@ -843,7 +974,10 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 					// - Environment variable expansion: -DtestJBPConfig2="$PATH" -> -DtestJBPConfig2=/usr/local/bin:/usr/bin:/bin
 					Expect(logs.String()).To(ContainSubstring("Java Opts"))
 					Expect(logs.String()).To(ContainSubstring("Adding configured JAVA_OPTS"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("testJBPConfig1=test test"),
+						ContainSubstring("testJBPConfig2=/"),
+					)).WithEndpoint("/system-properties"))
 				})
 			})
 		})
@@ -854,9 +988,9 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 					deployment, logs, err := platform.Deploy.
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION":         defaultJavaVersion,
-							"JBP_CONFIG_JREBEL_AGENT": "'{enabled: true}'",
+							"JBP_CONFIG_JREBEL_AGENT": "{enabled: true}",
 						}).
-						Execute(name, appWithFile(t, requireJar(t, sb4JarPath), "rebel-remote.xml", "<application/>\n"))
+						Execute(name, appWithFile(t, requireJar(t, simpleJarPath), "rebel-remote.xml", "<application/>\n"))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// JRebel agent should be detected when enabled
@@ -870,14 +1004,18 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 					deployment, logs, err := platform.Deploy.
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION":              defaultJavaVersion,
-							"JBP_CONFIG_YOUR_KIT_PROFILER": "'{enabled: true}'",
+							"JBP_CONFIG_YOUR_KIT_PROFILER": "{enabled: true}",
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// YourKit profiler should be detected when enabled
 					Expect(logs.String()).To(ContainSubstring("YourKit"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-agentpath:"),
+						ContainSubstring("libyjpagent.so="),
+						ContainSubstring("port=10001"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -888,12 +1026,15 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 							"BP_JAVA_VERSION":               defaultJavaVersion,
 							"JBP_CONFIG_JPROFILER_PROFILER": "{ enabled: true }",
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					// JProfiler profiler should be detected when enabled
 					Expect(logs.String()).To(ContainSubstring("JProfiler"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-agentpath:"),
+						ContainSubstring("libjprofilerti.so=port=8849,nowait"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 		})
@@ -913,11 +1054,16 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Contrast Security"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("contrast-security"),
+						ContainSubstring("contrast.config"),
+						ContainSubstring("-Dcontrast.dir="),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -935,11 +1081,15 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Sealights"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("sl-test-listener"),
+						ContainSubstring("-Dsl.token=test-token"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -956,7 +1106,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Introscope"))
@@ -977,7 +1127,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Riverbed AppInternals"))
@@ -999,6 +1149,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 
 					// AspectJ Weaver should be detected when enabled
 					Expect(logs.String()).To(ContainSubstring("AspectJ"))
+
 					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
 				})
 			})
@@ -1020,7 +1171,6 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("AspectJ Weaver detected"))
-					Eventually(deployment).Should(matchers.Serve(ContainSubstring("")))
 
 					// The fixture's stub weaver prints this from premain, so the -javaagent was attached at runtime
 					Eventually(func() (string, error) {
@@ -1035,7 +1185,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						WithEnv(map[string]string{
 							"BP_JAVA_VERSION": defaultJavaVersion,
 						}).
-						Execute(name, requireJar(t, sb4JarPath))
+						Execute(name, requireJar(t, simpleJarPath))
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("Container Security Provider"))

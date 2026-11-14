@@ -13,7 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func testSpringBoot(platform switchblade.Platform, fixtures string, sb3JarPath, sb4JarPath string) func(*testing.T, spec.G, spec.S) {
+func testSpringBoot(platform switchblade.Platform, fixtures string, sb3JarPath, sb4JarPath, simpleJarPath string) func(*testing.T, spec.G, spec.S) {
 	return func(t *testing.T, context spec.G, it spec.S) {
 		var (
 			Expect     = NewWithT(t).Expect
@@ -213,7 +213,7 @@ func testSpringBoot(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						"JBP_CONFIG_JAVA_OPTS": `{from_environment: false, java_opts: ["-Xmx384M", "-XX:ReservedCodeCacheSize=120M", "-Xss512k", "-DcustomProp=testValue"]}`,
 						"JBP_CONFIG_DEBUG":     `{enabled: true}`,
 					}).
-					Execute(name, appWithFile(t, requireJar(t, sb4JarPath), "rebel-remote.xml", "<application/>\n"))
+					Execute(name, appWithFile(t, requireJar(t, simpleJarPath), "rebel-remote.xml", "<application/>\n"))
 				Expect(err).NotTo(HaveOccurred(), logs.String)
 
 				// Verify FOUR frameworks are detected:
@@ -254,7 +254,7 @@ func testSpringBoot(platform switchblade.Platform, fixtures string, sb3JarPath, 
 						"JAVA_OPTS":            "-DuserProp=fromEnvironment -Xmx256M",
 						"JBP_CONFIG_DEBUG":     `{enabled: true}`,
 					}).
-					Execute(name, appWithFile(t, requireJar(t, sb4JarPath), "rebel-remote.xml", "<application/>\n"))
+					Execute(name, appWithFile(t, requireJar(t, simpleJarPath), "rebel-remote.xml", "<application/>\n"))
 				Expect(err).NotTo(HaveOccurred(), logs.String)
 
 				// Verify FOUR frameworks are detected:
