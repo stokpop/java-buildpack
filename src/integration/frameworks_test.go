@@ -33,7 +33,7 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 		context("APM Agents", func() {
 			context("with New Relic service binding", func() {
 				it("detects and installs New Relic agent", func() {
-					_, logs, err := platform.Deploy.
+					deployment, logs, err := platform.Deploy.
 						WithServices(map[string]switchblade.Service{
 							"newrelic": {
 								"licenseKey": "test-license-key-1234567890abcdef",
@@ -47,10 +47,11 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 
 					// Verify New Relic agent was detected
 					Expect(logs.String()).To(ContainSubstring("New Relic Agent"))
+					Eventually(deployment).Should(matchers.Serve(ContainSubstring("newrelic.jar")).WithEndpoint("/input-arguments"))
 				})
 
 				it("configures New Relic with license key from service binding", func() {
-					_, logs, err := platform.Deploy.
+					deployment, logs, err := platform.Deploy.
 						WithServices(map[string]switchblade.Service{
 							"my-newrelic-service": {
 								"licenseKey": "abc123def456ghi789jkl012mno345pq",
@@ -63,6 +64,13 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 					Expect(err).NotTo(HaveOccurred(), logs.String)
 
 					Expect(logs.String()).To(ContainSubstring("New Relic Agent"))
+
+					// Verify the configuration reaches the running JVM, not only the staging log
+					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("-javaagent:"),
+						ContainSubstring("newrelic.jar"),
+						ContainSubstring("-Dnewrelic.config.license_key=abc123def456ghi789jkl012mno345pq"),
+					)).WithEndpoint("/input-arguments"))
 				})
 			})
 
@@ -182,8 +190,9 @@ func testFrameworks(platform switchblade.Platform, fixtures string, sb3JarPath, 
 					Expect(logs.String()).To(ContainSubstring("Datadog"))
 					Expect(logs.String()).To(ContainSubstring("SkyWalking"))
 
-					// The Datadog and SkyWalking agents are attached to the same JVM
+					// All three agents are attached to the same JVM
 					Eventually(deployment).Should(matchers.Serve(And(
+						ContainSubstring("newrelic"),
 						ContainSubstring("datadog"),
 						ContainSubstring("skywalking"),
 					)).WithEndpoint("/input-arguments"))
